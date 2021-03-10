@@ -1,0 +1,16 @@
+
+import Math;
+
+set Save
+    case ?x then hSave(?x);
+
+set Load as recursive
+    case ?x then hLoad(?x)
+    case 0, []
+    case ?n, ?xs then (hLoad(?x) & Sub(?n, 1, ?nm) & Load(?nm, ?ys) & E(?xs, [?x*?ys])) $ (E(?xs, []));
+
+set LoadAll
+    case ?xs then (hLoad(?x) & LoadAll(?ys) & E([?x*?ys], ?xs)) $ (E(?xs, []));
+
+set View
+    case ?x then hLoad(?x) & Save(?x);

@@ -1,0 +1,34 @@
+
+import Math;
+import List;
+
+set Sum
+    case [], 0
+    case [?x * ?xs], ?s then Sum(?xs, ?partial) & Add(?x, ?partial, ?s);
+
+set Max
+    case [?x], ?x
+    case [?x * ?xs], ?max then Max(?xs, ?maxs) & (GT(?x, ?maxs) & E(?max, ?x))
+                                               $ (E(?max, ?maxs));
+
+set Min
+    case [?x], ?x
+    case [?x * ?xs], ?min then Min(?xs, ?mins) & (LT(?x, ?mins) & E(?min, ?x))
+                                               $ (E(?min, ?mins));
+
+set Range as recursive
+    case ?x, ?x, [?x]
+    case ?x, ?y, [?x*?xs] then LT(?x,?y) & Add(?x, 1, ?xp1) & Range(?xp1, ?y, ?xs);
+
+set Partition
+	# item, original list, left, right
+	case ?x, [], [], []
+	case ?x, [?y*?ys], ?left, ?right then (LTE(?y, ?x) & Partition(?x, ?ys, ?rleft, ?right) & E(?left, [?y*?rleft]))
+	                                    $ (LTE(?x, ?y) & Partition(?x, ?ys, ?left, ?rright) & E(?right, [?y*?rright]));
+
+set Sort
+	case [], []
+	case [?x], [?x]
+	case ([?x*?xs], ?sorted) then Partition(?x, ?xs, ?left, ?right) & Sort(?left, ?lefts) & Sort(?right, ?rights) & Join(?lefts, [?x], ?something) &
+                                    Join(?something, ?rights, ?sorted);
+

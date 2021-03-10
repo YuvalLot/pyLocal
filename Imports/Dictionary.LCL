@@ -1,0 +1,42 @@
+
+import List;
+import Predicates;
+
+package ListsToDictionaryPackage{?keys, ?values}
+    case ?x, ?y then (Hd(?keys, ?x) & Hd(?values, ?y)) |
+                     (Tl(?keys, ?restk) & Tl(?values, ?restv) & ListsToDictionaryPackage{?restk, ?restv}(?x, ?y));
+
+package PairsToDictionaryPackage{[[?key, ?value] * ?rest]}
+	case ?key, ?value
+	case ?x, ?y then PairsToDictionaryPackage{?rest}(?x, ?y);
+
+package AddDictPackage{?dict, ?key, ?value}
+	case ?key, ?value
+	case ?x, ?y then ?dict(?x, ?y) & ~E(?x, ?key);
+
+package RemovePackage{?dict, ?key}
+    case ?x, ?y then ?dict(?x, ?y) & ~E(?x, ?key);
+
+package UnitePackage{?dict1, ?dict2}
+	case ?x, ?y then ?dict1(?x, ?y) $ ?dict2(?x, ?y);
+
+set AddDict
+	case ?dict, ?key, ?value, ?newDict then E(AddDictPackage{?dict, ?key, ?value}, ?newDict);
+
+set ListsToDictionary
+	case ?keys, ?values, ?dict then E(ListsToDictionaryPackage{?keys, ?values}, ?dict);
+
+set PairsToDictionary
+	case ?pairs, ?dict then E(PairsToDictionaryPackage{?pairs}, ?dict);
+
+set DictToPairs
+	case ?dict, ?pairs then AllSolutions(?dict, 2, ?pairs);
+
+set Keys
+	case ?dict, ?keys then AllSolutions(?dict, 2, ?pairs) & Unzip(?pairs, 0, ?keys);
+
+set Values
+	case ?dict, ?keys then AllSolutions(?dict, 2, ?pairs) & Unzip(?pairs, 1, ?keys);
+
+set Unite
+	case ?dict1, ?dict2, ?dict3 then E(UnitePackage{?dict1, ?dict2}, ?dict3);

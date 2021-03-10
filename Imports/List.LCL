@@ -1,0 +1,145 @@
+
+import Math;
+import Types;
+
+set Break
+    case ?x, ?y then hBreak(?x, ?y);
+
+set Concat
+	case [?x], ?x
+	case [?xlong*?xs], ?z then Concat(?xs, ?cd) & E(?xlong?cd, ?z);
+
+set Reverse as recursive
+	case [], []
+	case [?x], [?x]
+	case [?x*?xs], ?list then Reverse(?xs, ?rxs) & Appended(?x, ?rxs, ?list);
+
+set Appended
+    # item, list, new_list
+    case ?x, [], [?x]
+    case ?x, [?y * ?xs], [?y * ?ys] then Appended(?x, ?xs, ?ys);
+
+set In
+    case ?x, [?x]
+    case ?x, [?x * ?ys]
+    case ?x, [?y * ?ys] then In(?x, ?ys);
+
+set Split as recursive
+	case [], ?x, [], []
+	case [?x*?rest1], ?x, [], ?rest1
+	case [?y*?rest1], ?x, [?y*?rest2], ?rest3 then Split(?rest1, ?x, ?rest2, ?rest3);
+
+set Change as recursive
+    case [?x * ?xs], 0, ?y, [?y * ?xs]
+    case [?x * ?xs], ?n, ?y, [?x * ?ys] then Sub(?n, 1, ?m) & Change(?xs, ?m, ?y, ?ys);
+
+set Join
+	case [], ?list, ?list
+	case [?x * ?xs], ?list, [?x*?joined] then Join(?xs, ?list, ?joined)
+	case [],[]
+	case [?l * ?ls], ?final then Join(?ls, ?partial) & Join(?l, ?partial, ?final) $ E(?final, [?l * ?partial]);
+
+set Index
+	# index, list, value at index
+	case  0, [?x * ?rest], ?x
+	case ?i, [?y * ?rest], ?x then Index(?iMinus1, ?rest, ?x) & Add(1,?iMinus1, ?i);
+
+set Hd
+    case [?x * ?xs], ?z then E(?x, ?z);
+
+set Tl
+    case [?x*?xs], ?xs;
+
+set Last
+    case [?x], ?x
+    case [?x * ?xs], ?y then Last(?xs, ?y);
+
+set Len
+	case [], 0
+	case [?x * ?xs], ?n then Len(?xs, ?m) & Add(?m, 1, ?n);
+
+set SameLen as recursive
+	case [],[]
+	case [?x*?xs], [?y*?ys] then SameLen(?xs, ?ys);
+
+set Removed as recursive
+	# case var, list_with_var, list_without_var
+	case ?x, [?x * ?xs], ?xs
+	case ?x, [?y * ?xs], [?y * ?rs] then Removed(?x, ?xs, ?rs);
+
+set All
+    case ?p, []
+    case ?p, [?x*?xs] then ?p(?x) & All(?p, ?xs);
+
+set Any
+    case ?p, [?x*?xs] then ?p(?x) | Any(?p, ?xs);
+
+set Duplicate as recursive
+    case ?xs, 0, []
+    case ?xs, ?num, ?rest then Sub(?num, 1, ?new) & Duplicate(?xs, ?new, ?z) & Join(?xs, ?z, ?rest);
+
+set Filter
+    case ?p, [], []
+    case ?p, [?x * ?xs], ?fs then (?p(?x) & Filter(?p, ?xs, ?ys) & E([?x*?ys], ?fs))
+                                $ (Filter(?p, ?xs, ?fs))
+    case ?p, ?param, [], []
+    case ?p, ?param, [?x * ?xs], ?fs then (?p(?x, ?param) & Filter(?p, ?param, ?xs, ?ys) & E([?x*?ys], ?fs))
+                                        $ (Filter(?p, ?param, ?xs, ?fs));
+
+set Map
+    case ?p, [], []
+    case ?p, [?x*?xs], [?y*?ys] then (?p(?x, ?y) & Map(?p, ?xs, ?ys)) $ (Map(?p, ?xs, ?ys) & ?p(?x,?y));
+
+set Zip
+    case [], [], []
+    case [?x*?xs], [?y*?ys], [[?x, ?y] * ?zs] then Zip(?xs, ?ys, ?zs);
+
+set Unzip
+    case [], ?n, []
+    case [?list * ?tdList], ?n, [?item * ?items] then Index(?n, ?list, ?item) & Unzip(?tdList, ?n, ?items);
+
+set AddToEach
+	case ?x, [], []
+	case ?x, [?l * ?ls], [[?x * ?l] * ?rst] then AddToEach(?x, ?ls, ?rst);
+
+set Take as recursive
+    case ?x, 0, []
+    case [?x * ?xs], ?n, [?x * ?ys] then Sub(?n, 1, ?m) & Take(?xs, ?m, ?ys);
+
+set Drop as recursive
+    case ?x, 0, ?x
+    case [], ?n, []
+    case [?x * ?xs], ?n, ?ys then Sub(?n, 1, ?m) & Drop(?xs, ?m, ?ys);
+
+set xSublist as recursive
+	case ?A, 0, 0, []
+	case [?a * ?A], 0, ?end, [?a * ?B] then Sub(?end, 1, ?newEnd) & Sublist(?A, 0, ?newEnd, ?B)
+	case [?a * ?A], ?start, ?end, ?B then Sub(?start, 1, ?newStart) & Sub(?end, 1, ?newEnd) & Sublist(?A, ?newStart, ?newEnd, ?B);
+
+set xSearchFinal
+    case ?A, 1, []
+    case [?c * ?A], ?y, [?c * ?B] then xSearchFinal(?A, ?ym, ?B) & Add(?ym, 1, ?y);
+
+set xSearch
+    case ?A, ?B, ?C, [] then NOT
+    case [?c * ?l1], ?x, ?y, [?c * ?l2] then (E(?x, 0) & xSearchFinal(?l1, ?y, ?l2))
+    case [?c * ?l1], ?x, ?y, ?l2 then xSearch(?l1, ?_x, ?_y, ?l2) & Add(?_x, 1, ?x) & Add(?_y, 1, ?y);
+
+set Sublist
+    case ?l1, ?x, ?y, ?l2 then (Atom(?x) & Atom(?y) & xSublist(?l1, ?x, ?y, ?l2))
+                             $ (xSearch(?l1, ?x, ?y, ?l2));
+
+set Nested
+    case [?l * ?ls] then List(?l) $ Nested(?ls);
+
+set Unpack
+    case ?list, ?unpacked then (Nested(?list) & Join(?list, ?joined) & Unpack(?joined, ?unpacked))
+                             $ (E(?list, ?unpacked));
+
+set Before as recursive
+    case ?x, ?y, [?x * ?rest] then ~E(?x, ?y)
+    case ?x, ?y, [?z * ?rest] then Before(?x, ?y, ?rest) & ~E(?z, ?y);
+
+set _C
+    case [], ?A, ?A
+    case [?x * ?xs], [?x * ?ys], ?A then _C(?xs, ?ys, ?A);

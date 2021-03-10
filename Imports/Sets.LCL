@@ -1,0 +1,58 @@
+
+import List;
+import Predicates;
+import NumberList;
+
+set SetEquals as recursive
+    case ?x, ?x
+    case ?xs, ?ys then SubSet(?xs, ?ys) & SubSet(?ys, ?xs);
+
+set ToSet
+    case [], []
+    case [?x * ?xs], ?set then ToSet(?xs, ?p) & (In(?x, ?p) & SetEquals(?p, ?set))
+                                              $ (SetEquals([?x * ?p], ?set));
+
+set SubSet
+	case [], ?xs
+	case [?x * ?xs], ?set then In(?x, ?set) & SubSet(?xs, ?set);
+
+set ProperSubSet
+	case ?set1, ?set2 then SubSet(?set1, ?set2) & ~SubSet(?set2, ?set1);
+
+set Union
+    case ?set1, ?set2, ?set3 then Join(?set1, ?set2, ?list) & ToSet(?list, ?set3);
+
+set Intersection
+    case [], ?set2, []
+    case [?x * ?xs], ?set2, ?set3 then Intersection(?xs, ?set2, ?partial) & (In(?x, ?set2) & E([?x * ?partial], ?set3))
+                                                                          $ (E(?partial, ?set3));
+
+set Choice as recursive
+    case ?set, 0, [[]]
+    case [], ?n, []
+    case [?x * ?set], 1, [[?x] * ?rest] then Choice(?set, 1, ?rest)
+
+    case [?x * ?set], ?n, ?final then Len([?x *?set], ?t) & (LT(?t, ?n) & E(?final, []))
+												          $ (E(?t, ?n) & E(?final, [[?x * ?set]]))
+				    						              $ (GT(?t, ?n)
+				                                            & Sub(?n, 1, ?m) & Choice(?set, ?m, ?cSetX) & AddToEach(?x, ?cSetX, ?partial1)
+				                                            & Choice(?set, ?n, ?partial2) & Join(?partial1, ?partial2, ?final));
+
+set xPowerSet
+	case ?set, [], []
+	case ?set, ?pset, [?r * ?rng] then Choice(?set, ?r, ?p) & xPowerSet(?set, ?partial, ?rng) & Join(?p, ?partial, ?pset);
+
+set PowerSet
+	case ?set, ?pset then Len(?set, ?n) & Range(0, ?n, ?rng) & xPowerSet(?set, ?pset, ?rng);
+
+package CartesianPackage{?set1, ?set2}
+	case ?x, ?y then In(?x, ?set1) & In(?y, ?set2);
+
+set Cartesian
+	case ?set1, ?set2, ?p then AllSolutions(CartesianPackage{?set1, ?set2}, 2, ?p) ;
+
+set Difference as recursive
+	case [], ?set1, []
+	case ?set1, [], ?set1
+	case [?x * ?xs], ?set1, ?d then (In(?x, ?set1) & Difference(?xs, ?set1, ?d))
+	                              $ (Difference(?xs, ?set1, ?dwox) & E(?d, [?x * ?dwox]));

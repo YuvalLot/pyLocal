@@ -1,0 +1,89 @@
+
+import Types;
+
+set Add
+    case ?x, ?y, ?z then hAdd(?x, ?y, ?z) $ hSub(?z, ?y, ?x) $ hSub(?z, ?x, ?y);
+
+set Sub
+    case ?x, ?y, ?z then hSub(?x, ?y, ?z) $ hAdd(?y, ?z, ?x) $ hSub(?x, ?z, ?y);
+
+set Mul
+    case ?x, ?y, ?z then hMul(?x, ?y, ?z) $ hDiv(?z, ?y, ?x) $ hDiv(?z, ?x, ?y);
+
+set Div
+    case ?x, ?y, ?z then hDiv(?x, ?y, ?z) $ hMul(?z, ?y, ?z) $ hDiv(?x, ?z, ?y);
+
+set Mod
+    case ?x, ?y, ?z then hMod(?x, ?y, ?z)
+                       $ (~Known(?x) & LT(?z,?y) & ModGen(?x,?y,?z))
+                       $ (LTE(?z, ?x) & ModRng(?x, ?z, 1, ?y));
+
+set ModGen
+    case ?z, ?y, ?z
+    case ?x, ?y, ?z then Add(?z, ?y, ?nz) & ModGen(?x, ?y, ?nz);
+
+set ModRng
+    case ?x, ?z, ?test, ?y then LTE(?test, ?x) & (hMod(?x, ?test, ?z) & E(?y, ?test))
+                              | (Add(1, ?test, ?nt) & ModRng(?x, ?z, ?nt, ?y));
+
+set Floor
+    case ?x, ?y then hFloor(?x, ?y);
+
+set Ceil
+    case ?x, ?y then hCeil(?x, ?y);
+
+set Power
+    case ?x, ?y, ?z then hPower(?x, ?y, ?z)
+                       $ (hDiv(1, ?y, ?root) & hPower(?z, ?root, ?x))
+                       $ Logb(?z, ?x, ?y);
+
+set Log
+    case ?x, ?y then hLog(?x, ?y) $ hPower(10, ?y, ?x);
+
+set Sin
+    case ?x, ?y then hSin(?x, ?y);
+
+set Cos
+    case ?x, ?y then hCos(?x, ?y);
+
+set Tan
+    case ?x, ?y then hTan(?x, ?y);
+
+set LT
+    case ?x, ?y then hLT(?x, ?y);
+
+set Neg
+    case ?x, ?y then Mul(?x, -1, ?y) $ Mul(?y, -1, ?x);
+
+set Half
+    case ?x, ?y then Mul(?x, 0.5, ?xh) & Floor(?xh, ?y);
+
+set E
+    case ?x, ?x
+    case ?x, ?y then hE(?x, ?y);
+
+set LTE
+    case ?x, ?x
+    case ?x, ?y then LT(?x, ?y);
+
+set GT
+    case ?x, ?y then LT(?y, ?x);
+
+set GTE
+    case ?x, ?x
+    case ?x, ?y then LT(?y, ?x);
+
+set Abs
+    case ?x, ?y then (E(?x, ?y) & GTE(?y, 0)) | (Neg(?x, ?y) & GTE(?y, 0));
+
+set Pi
+    case 3.141592653589793;
+
+set Euler
+    case 2.718281828459045;
+
+set Logb
+    case ?x, ?b, ?y then Log(?x, ?xlog) & Log(?b, ?blog) & Div(?xlog, ?blog, ?y);
+
+set Ln
+    case ?x, ?y then Euler(?e) & Logb(?x, ?e, ?y);

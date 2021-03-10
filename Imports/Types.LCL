@@ -1,0 +1,25 @@
+
+set Atom
+    case ?x then hBreak(?x, ?_) & ~Predicate(?x) & ~Package(?x) & ~Title(?x);
+
+set Title
+    case ?x then isTitle(?x);
+
+set Variable
+    case ?x then isVar(?x);
+
+set List
+    case ?x then isList(?x);
+
+set Package
+    case ?x then isPackage(?x);
+
+set Predicate
+    case ?x then isPredicate(?x);
+
+set Known
+    case ?x then isKnown(?x);
+
+set SameType
+    case ?x, ?y then (Atom(?x) & Atom(?y)) $ (Variable(?x) & Variable(?y)) $ (List(?x) & List(?y))
+                   $ (Predicate(?x) & Predicate(?y)) $ (Package(?x) & Package(?y)) $ (Title(?x) & Title(?y));

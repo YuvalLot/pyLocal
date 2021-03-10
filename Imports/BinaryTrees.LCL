@@ -1,0 +1,74 @@
+
+import Math;
+import NumberList;
+import Types;
+import List;
+
+declare Branch;
+
+set BinaryTree
+	case Leaf
+	case Branch(?x, ?y, ?z) then BinaryTree(?y) & BinaryTree(?z);
+
+set xCompTree as recursive
+	case ?k, 0, Leaf
+	case ?k, ?n, Branch(?k, ?t1, ?t2) then Mul(2, ?k, ?2k) & Add(?2k, 1, ?2k1) & Sub(?n, 1, ?m)
+					                     & xCompTree(?2k, ?m, ?t1) & xCompTree(?2k1, ?m, ?t2);
+
+set CompTree
+	case ?n, ?t then xCompTree(1, ?n, ?t);
+
+set Size
+	case Leaf, 0
+	case Branch(?x, ?t1, ?t2), ?n then Size(?t1, ?s1) & Size(?t2, ?s2) & Add(?s1, ?s2, ?s3) & Add(?s3, 1, ?n);
+
+set Depth
+	case Leaf, 0
+	case Branch(?x, ?t1, ?t2), ?d then Depth(?t1, ?d1) & Depth(?t2, ?d2) & Max([?d1, ?d2], ?md) & Add(?md, 1, ?d);
+
+set Reflected
+	case Leaf, Leaf
+	case Branch(?v, ?t1, ?t2), Branch(?v, ?rt2, ?rt1) then Reflected(?t1, ?rt1) & Reflected(?t2, ?rt2);
+
+set xPreord
+	case Leaf, ?xs, ?xs
+	case Branch(?v, ?t1, ?t2), ?xs, [?v * ?ys] then xPreord(?t2, ?xs, ?c1) & xPreord(?t1, ?c1, ?ys);
+
+set xInord
+	case Leaf, ?xs, ?xs
+	case Branch(?v, ?t1, ?t2), ?xs, ?ys then xInord(?t2, ?xs, ?cs) & xInord(?t1, [?v * ?cs], ?ys);
+
+set xPostord
+	case Leaf, ?xs, ?xs
+	case Branch(?v, ?t1, ?t2), ?xs, ?ys then xPostord(?t2, [?v * ?xs], ?cs) & xPostord(?t1, ?cs, ?ys);
+
+set Preord
+	case ?t, ?xs then (Known(?t) & xPreord(?t, [], ?xs)) $ BalPre(?xs, ?t);
+
+set Inord
+	case ?t, ?xs then (Known(?t) & xInord(?t, [], ?xs)) $ BalIn(?xs, ?t);
+
+set Postord
+	case ?t, ?xs then (Known(?t) & xPostord(?t, [], ?xs)) $ BanPost(?xs, ?t);
+
+set BalPre as recursive
+	case [], Leaf
+	case [?x * ?xs], Branch(?x, ?t1, ?t2) then Len(?xs, ?n) & Half(?n, ?k) & Take(?xs, ?k, ?first) & BalPre(?first, ?t1) & Drop(?xs, ?k, ?second) & BalPre(?second, ?t2);
+
+set BalIn as recursive
+	case [], Leaf
+	case ?xs, Branch(?y, ?t1, ?t2) then Len(?xs, ?n) & Half(?n, ?k) & Drop(?xs, ?k, [?y * ?ys]) & Take(?xs, ?k, ?first) & BalIn(?first, ?t1) & BalIn(?ys, ?t2);
+
+set BalPost as recursive
+	case [], Leaf
+	case [?x], Branch(?x, Leaf, Leaf)
+	case ?xs, Branch(?v, ?t1, ?t2) then Len(?xs, ?n) & Half(?n, ?k) & Drop(?xs, ?k, ?bc) & Take(?xs, ?k, ?a) & Sub(?n, ?k, ?bcLen) & Sub(?bcLen, 1, ?needed)
+									  & Take(?bc, ?needed, ?b) & Last(?bc, ?v) & Print(?a, ?b, ?c) & BalPost(?a, ?t1) & BalPost(?b, ?t2);
+
+set xBFS as recursive
+	case [], []
+	case [Leaf * ?ts], ?xs then xBFS(?ts, ?xs)
+	case [Branch(?v, ?t1, ?t2) * ?ts], [?v * ?xs] then Appended(?t1, ?ts, ?partial1) & Appended(?t2, ?partial1, ?partial2) & xBFS(?partial2, ?xs);
+
+set BFord
+	case ?t, ?xs then xBFS([?t], ?xs);

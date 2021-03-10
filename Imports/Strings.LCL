@@ -1,0 +1,365 @@
+
+import Math;
+import List;
+
+set Input
+    case ?x then hInput(?x);
+
+set Chars
+    case ?x, ?y then ToChars(?x, ?y) $ ToString(?y, ?x);
+
+set xLower as recursive
+	case [], []
+	case ["A" * ?x], ["a" * ?y] then xLower(?x, ?y)
+	case ["B" * ?x], ["b" * ?y] then xLower(?x, ?y)
+	case ["C" * ?x], ["c" * ?y] then xLower(?x, ?y)
+	case ["D" * ?x], ["d" * ?y] then xLower(?x, ?y)
+	case ["E" * ?x], ["e" * ?y] then xLower(?x, ?y)
+	case ["F" * ?x], ["f" * ?y] then xLower(?x, ?y)
+	case ["G" * ?x], ["g" * ?y] then xLower(?x, ?y)
+	case ["H" * ?x], ["h" * ?y] then xLower(?x, ?y)
+	case ["I" * ?x], ["i" * ?y] then xLower(?x, ?y)
+	case ["J" * ?x], ["j" * ?y] then xLower(?x, ?y)
+	case ["K" * ?x], ["k" * ?y] then xLower(?x, ?y)
+	case ["L" * ?x], ["l" * ?y] then xLower(?x, ?y)
+	case ["M" * ?x], ["m" * ?y] then xLower(?x, ?y)
+	case ["N" * ?x], ["n" * ?y] then xLower(?x, ?y)
+	case ["O" * ?x], ["o" * ?y] then xLower(?x, ?y)
+	case ["P" * ?x], ["p" * ?y] then xLower(?x, ?y)
+	case ["Q" * ?x], ["q" * ?y] then xLower(?x, ?y)
+	case ["R" * ?x], ["r" * ?y] then xLower(?x, ?y)
+	case ["S" * ?x], ["s" * ?y] then xLower(?x, ?y)
+	case ["T" * ?x], ["t" * ?y] then xLower(?x, ?y)
+	case ["U" * ?x], ["u" * ?y] then xLower(?x, ?y)
+	case ["V" * ?x], ["v" * ?y] then xLower(?x, ?y)
+	case ["W" * ?x], ["w" * ?y] then xLower(?x, ?y)
+	case ["X" * ?x], ["x" * ?y] then xLower(?x, ?y)
+	case ["Y" * ?x], ["y" * ?y] then xLower(?x, ?y)
+	case ["Z" * ?x], ["z" * ?y] then xLower(?x, ?y)
+	case [?c * ?x], [?c * ?y] then xLower(?x, ?y);
+
+set Lower
+	case ?A, ?a then Chars(?A, ?As) & xLower(?As, ?as) & Chars(?a, ?as);
+
+set Upper
+	case ?a, ?A then Chars(?a, ?as) & xLower(?As, ?as) & Chars(?A, ?As);
+
+set AddStrings
+	case ?A, ?B, ?AB then Chars(?A, ?c1) & Chars(?B, ?c2) & Join(?c1, ?c2, ?c) & Chars(?AB, ?c);
+
+set InString
+	case ?A, ?B then Chars(?A, ?As) & Chars(?B, ?Bs) & Sublist(?As, ?x, ?y, ?Bs);
+
+set Substring
+	case ?A, ?start, ?end, ?B then Chars(?A, ?As) & Sublist(?As, ?start, ?end, ?Bs) & Chars(?B, ?Bs);
+
+set Integer as recursive
+	case ["0"]
+	case ["1"]
+	case ["2"]
+	case ["3"]
+	case ["4"]
+	case ["5"]
+	case ["6"]
+	case ["7"]
+	case ["8"]
+	case ["9"]
+	case ["0" * ?x] then Integer(?x)
+	case ["1" * ?x] then Integer(?x)
+	case ["2" * ?x] then Integer(?x)
+	case ["3" * ?x] then Integer(?x)
+	case ["4" * ?x] then Integer(?x)
+	case ["5" * ?x] then Integer(?x)
+	case ["6" * ?x] then Integer(?x)
+	case ["7" * ?x] then Integer(?x)
+	case ["8" * ?x] then Integer(?x)
+	case ["9" * ?x] then Integer(?x)
+	case ?x then Chars(?x, ?xs) & Integer(?xs);
+
+set Float
+	case ["0"]
+	case ["1"]
+	case ["2"]
+	case ["3"]
+	case ["4"]
+	case ["5"]
+	case ["6"]
+	case ["7"]
+	case ["8"]
+	case ["9"]
+	case ["0" * ?x] then Float(?x)
+	case ["1" * ?x] then Float(?x)
+	case ["2" * ?x] then Float(?x)
+	case ["3" * ?x] then Float(?x)
+	case ["4" * ?x] then Float(?x)
+	case ["5" * ?x] then Float(?x)
+	case ["6" * ?x] then Float(?x)
+	case ["7" * ?x] then Float(?x)
+	case ["8" * ?x] then Float(?x)
+	case ["9" * ?x] then Float(?x)
+	case ["." * ?x] then Integer(?x)
+	case ?x then Chars(?x, ?xs) & Float(?xs);
+
+set Format as recursive
+	case [], ?x, []
+	case ["%" * ?s], [?x * ?xs], [?x * ?A] then Format(?s, ?xs, ?A)
+	case [?a * ?A], ?x, [?a * ?B] then Format(?A, ?x, ?B)
+	case ?str, ?fs, ?fstr then Chars(?str, ?cs) & Format(?cs, ?fs, ?fcs) & Chars(?fstr, ?fcs);
+
+set Atomable
+	case []
+	case ["0" * ?x] then Atomable(?x)
+	case ["1" * ?x] then Atomable(?x)
+	case ["2" * ?x] then Atomable(?x)
+	case ["3" * ?x] then Atomable(?x)
+	case ["4" * ?x] then Atomable(?x)
+	case ["5" * ?x] then Atomable(?x)
+	case ["6" * ?x] then Atomable(?x)
+	case ["7" * ?x] then Atomable(?x)
+	case ["8" * ?x] then Atomable(?x)
+	case ["9" * ?x] then Atomable(?x)
+	case ["A" * ?x] then Atomable(?x)
+	case ["a" * ?x] then Atomable(?x)
+	case ["B" * ?x] then Atomable(?x)
+	case ["b" * ?x] then Atomable(?x)
+	case ["C" * ?x] then Atomable(?x)
+	case ["c" * ?x] then Atomable(?x)
+	case ["D" * ?x] then Atomable(?x)
+	case ["d" * ?x] then Atomable(?x)
+	case ["E" * ?x] then Atomable(?x)
+	case ["e" * ?x] then Atomable(?x)
+	case ["F" * ?x] then Atomable(?x)
+	case ["f" * ?x] then Atomable(?x)
+	case ["G" * ?x] then Atomable(?x)
+	case ["g" * ?x] then Atomable(?x)
+	case ["H" * ?x] then Atomable(?x)
+	case ["h" * ?x] then Atomable(?x)
+	case ["I" * ?x] then Atomable(?x)
+	case ["i" * ?x] then Atomable(?x)
+	case ["J" * ?x] then Atomable(?x)
+	case ["j" * ?x] then Atomable(?x)
+	case ["K" * ?x] then Atomable(?x)
+	case ["k" * ?x] then Atomable(?x)
+	case ["L" * ?x] then Atomable(?x)
+	case ["l" * ?x] then Atomable(?x)
+	case ["M" * ?x] then Atomable(?x)
+	case ["m" * ?x] then Atomable(?x)
+	case ["N" * ?x] then Atomable(?x)
+	case ["n" * ?x] then Atomable(?x)
+	case ["O" * ?x] then Atomable(?x)
+	case ["o" * ?x] then Atomable(?x)
+	case ["P" * ?x] then Atomable(?x)
+	case ["p" * ?x] then Atomable(?x)
+	case ["Q" * ?x] then Atomable(?x)
+	case ["q" * ?x] then Atomable(?x)
+	case ["R" * ?x] then Atomable(?x)
+	case ["r" * ?x] then Atomable(?x)
+	case ["S" * ?x] then Atomable(?x)
+	case ["s" * ?x] then Atomable(?x)
+	case ["T" * ?x] then Atomable(?x)
+	case ["t" * ?x] then Atomable(?x)
+	case ["U" * ?x] then Atomable(?x)
+	case ["u" * ?x] then Atomable(?x)
+	case ["V" * ?x] then Atomable(?x)
+	case ["v" * ?x] then Atomable(?x)
+	case ["W" * ?x] then Atomable(?x)
+	case ["w" * ?x] then Atomable(?x)
+	case ["X" * ?x] then Atomable(?x)
+	case ["x" * ?x] then Atomable(?x)
+	case ["Y" * ?x] then Atomable(?x)
+	case ["y" * ?x] then Atomable(?x)
+	case ["Z" * ?x] then Atomable(?x)
+	case ["z" * ?x] then Atomable(?x)
+	case ["_" * ?x] then Atomable(?x)
+	case ["-" * ?x] then Atomable(?x)
+	case ["." * ?x] then Atomable(?x);
+
+set Unmark
+	case [], []
+	case ["A" * ?x],[A * ?y] then Unmark(?x, ?y)
+	case ["a" * ?x],[a * ?y] then Unmark(?x, ?y)
+	case ["B" * ?x],[B * ?y] then Unmark(?x, ?y)
+	case ["b" * ?x],[b * ?y] then Unmark(?x, ?y)
+	case ["C" * ?x],[C * ?y] then Unmark(?x, ?y)
+	case ["c" * ?x],[c * ?y] then Unmark(?x, ?y)
+	case ["D" * ?x],[D * ?y] then Unmark(?x, ?y)
+	case ["d" * ?x],[d * ?y] then Unmark(?x, ?y)
+	case ["E" * ?x],[E * ?y] then Unmark(?x, ?y)
+	case ["e" * ?x],[e * ?y] then Unmark(?x, ?y)
+	case ["F" * ?x],[F * ?y] then Unmark(?x, ?y)
+	case ["f" * ?x],[f * ?y] then Unmark(?x, ?y)
+	case ["G" * ?x],[G * ?y] then Unmark(?x, ?y)
+	case ["g" * ?x],[g * ?y] then Unmark(?x, ?y)
+	case ["H" * ?x],[H * ?y] then Unmark(?x, ?y)
+	case ["h" * ?x],[h * ?y] then Unmark(?x, ?y)
+	case ["I" * ?x],[I * ?y] then Unmark(?x, ?y)
+	case ["i" * ?x],[i * ?y] then Unmark(?x, ?y)
+	case ["J" * ?x],[J * ?y] then Unmark(?x, ?y)
+	case ["j" * ?x],[j * ?y] then Unmark(?x, ?y)
+	case ["K" * ?x],[K * ?y] then Unmark(?x, ?y)
+	case ["k" * ?x],[k * ?y] then Unmark(?x, ?y)
+	case ["L" * ?x],[L * ?y] then Unmark(?x, ?y)
+	case ["l" * ?x],[l * ?y] then Unmark(?x, ?y)
+	case ["M" * ?x],[M * ?y] then Unmark(?x, ?y)
+	case ["m" * ?x],[m * ?y] then Unmark(?x, ?y)
+	case ["N" * ?x],[N * ?y] then Unmark(?x, ?y)
+	case ["n" * ?x],[n * ?y] then Unmark(?x, ?y)
+	case ["O" * ?x],[O * ?y] then Unmark(?x, ?y)
+	case ["o" * ?x],[o * ?y] then Unmark(?x, ?y)
+	case ["P" * ?x],[P * ?y] then Unmark(?x, ?y)
+	case ["p" * ?x],[p * ?y] then Unmark(?x, ?y)
+	case ["Q" * ?x],[Q * ?y] then Unmark(?x, ?y)
+	case ["q" * ?x],[q * ?y] then Unmark(?x, ?y)
+	case ["R" * ?x],[R * ?y] then Unmark(?x, ?y)
+	case ["r" * ?x],[r * ?y] then Unmark(?x, ?y)
+	case ["S" * ?x],[S * ?y] then Unmark(?x, ?y)
+	case ["s" * ?x],[s * ?y] then Unmark(?x, ?y)
+	case ["T" * ?x],[T * ?y] then Unmark(?x, ?y)
+	case ["t" * ?x],[t * ?y] then Unmark(?x, ?y)
+	case ["U" * ?x],[U * ?y] then Unmark(?x, ?y)
+	case ["u" * ?x],[u * ?y] then Unmark(?x, ?y)
+	case ["V" * ?x],[V * ?y] then Unmark(?x, ?y)
+	case ["v" * ?x],[v * ?y] then Unmark(?x, ?y)
+	case ["W" * ?x],[W * ?y] then Unmark(?x, ?y)
+	case ["w" * ?x],[w * ?y] then Unmark(?x, ?y)
+	case ["X" * ?x],[X * ?y] then Unmark(?x, ?y)
+	case ["x" * ?x],[x * ?y] then Unmark(?x, ?y)
+	case ["Y" * ?x],[Y * ?y] then Unmark(?x, ?y)
+	case ["y" * ?x],[y * ?y] then Unmark(?x, ?y)
+	case ["Z" * ?x],[Z * ?y] then Unmark(?x, ?y)
+	case ["z" * ?x],[z * ?y] then Unmark(?x, ?y)
+	case ["0" * ?x],[0 * ?y] then Unmark(?x, ?y)
+	case ["1" * ?x],[1 * ?y] then Unmark(?x, ?y)
+	case ["2" * ?x],[2 * ?y] then Unmark(?x, ?y)
+	case ["3" * ?x],[3 * ?y] then Unmark(?x, ?y)
+	case ["4" * ?x],[4 * ?y] then Unmark(?x, ?y)
+	case ["5" * ?x],[5 * ?y] then Unmark(?x, ?y)
+	case ["6" * ?x],[6 * ?y] then Unmark(?x, ?y)
+	case ["7" * ?x],[7 * ?y] then Unmark(?x, ?y)
+	case ["8" * ?x],[8 * ?y] then Unmark(?x, ?y)
+	case ["9" * ?x],[9 * ?y] then Unmark(?x, ?y)
+	case ["_" * ?x],[_ * ?y] then Unmark(?x, ?y)
+	case ["." * ?x],[. * ?y] then Unmark(?x, ?y)
+	case ["-" * ?x],[- * ?y] then Unmark(?x, ?y);
+
+set xStrip as recursive
+	case [" " * ?x], ?y then xStrip(?x, ?y)
+	case ["\n" * ?x], ?y then xStrip(?x, ?y)
+	case ["\t" * ?x], ?y then xStrip(?x, ?y)
+	case ?x, ?x;
+
+set Strip
+	case ?x, ?y then Chars(?x, ?xs) & xStrip(?xs, ?a1)
+	               & Reverse(?a1, ?a2) & xStrip(?a2, ?a3)
+	               & Reverse(?a3, ?a4) & Chars(?y, ?a4);
+
+set Atomize
+	case ?x, ?y then Chars(?x, ?cs) & ~E(?x, "") & Unmark(?cs, ?t) & Concat(?t, ?y);
+
+set StringLen
+    case ?s, ?n then Chars(?s, ?cs) & Len(?cs, ?n);
+
+set Ascii
+    case 9, "\t"
+    case 10, "\n"
+	case 32," "
+	case 33,"!"
+	case 34,"""
+	case 35,"#"
+	case 36,"$"
+	case 37,"%"
+	case 38,"&"
+	case 39,"'"
+	case 40,"("
+	case 41,")"
+	case 42,"*"
+	case 43,"+"
+	case 44,","
+	case 45,"-"
+	case 46,"."
+	case 47,"/"
+	case 48,"0"
+	case 49,"1"
+	case 50,"2"
+	case 51,"3"
+	case 52,"4"
+	case 53,"5"
+	case 54,"6"
+	case 55,"7"
+	case 56,"8"
+	case 57,"9"
+	case 58,":"
+	case 59,";"
+	case 60,"<"
+	case 61,"="
+	case 62,">"
+	case 63,"?"
+	case 64,"@"
+	case 65,"A"
+	case 66,"B"
+	case 67,"C"
+	case 68,"D"
+	case 69,"E"
+	case 70,"F"
+	case 71,"G"
+	case 72,"H"
+	case 73,"I"
+	case 74,"J"
+	case 75,"K"
+	case 76,"L"
+	case 77,"M"
+	case 78,"N"
+	case 79,"O"
+	case 80,"P"
+	case 81,"Q"
+	case 82,"R"
+	case 83,"S"
+	case 84,"T"
+	case 85,"U"
+	case 86,"V"
+	case 87,"W"
+	case 88,"X"
+	case 89,"Y"
+	case 90,"Z"
+	case 91,"["
+	case 92,"\"
+	case 93,"]"
+	case 94,"^"
+	case 95,"_"
+	case 96,"`"
+	case 97,"a"
+	case 98,"b"
+	case 99,"c"
+	case 100,"d"
+	case 101,"e"
+	case 102,"f"
+	case 103,"g"
+	case 104,"h"
+	case 105,"i"
+	case 106,"j"
+	case 107,"k"
+	case 108,"l"
+	case 109,"m"
+	case 110,"n"
+	case 111,"o"
+	case 112,"p"
+	case 113,"q"
+	case 114,"r"
+	case 115,"s"
+	case 116,"t"
+	case 117,"u"
+	case 118,"v"
+	case 119,"w"
+	case 120,"x"
+	case 121,"y"
+	case 122,"z"
+	case 123,"{"
+	case 124,"|"
+	case 125,"}"
+	case 126,"~";
+
+set StringBefore
+    case [], [?x * ?xs]
+    case [?c * ?s1], [?c * ?s2] then StringBefore(?s1, ?s2)
+    case [?c1 * ?_0], [?c2 * ?_1] then Ascii(?n1, ?c1) & Ascii(?n2, ?c2) & LT(?n1, ?n2)
+    case ?s1, ?s2 then Chars(?s1, ?cs1) & Chars(?s2, ?cs2) & StringBefore(?cs1, ?cs2);

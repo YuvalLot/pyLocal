@@ -1,0 +1,31 @@
+
+import Math;
+import Strings;
+
+set Open
+    case ?name, ?type, ?file then hOpen(?name, ?type, ?file);
+
+set Close
+    case ?file then hClose(?file);
+
+set ReadChar
+    case ?file, ?char then hRead(?file, ?char);
+
+set xRead
+    case ?file, ?t, [] then LTE(?t, 0)
+    case ?file, ?n, [?c * ?cs] then hRead(?file, ?c) & Sub(?n, 1, ?m) & xRead(?file, ?m, ?cs);
+set Read
+    case ?file, ?n, ?txt then xRead(?file, ?n, ?chars) & Chars(?txt, ?chars);
+
+set xReadUntil
+    case ?file, ?until, [?c * ?cs] then hRead(?file, ?c)
+        & (   (E(?c, ?until) & E(?cs, []) )
+            $ (xReadUntil(?file, ?until, ?cs)));
+set ReadUntil
+    case ?file, ?until, ?str then xReadUntil(?file, ?until, ?chars) & Chars(?str, ?chars);
+
+set ReadAll
+    case ?file, ?str then ReadUntil(?file, "", ?str);
+
+set Write
+    case ?f, ?str then hWrite(?f, ?str);

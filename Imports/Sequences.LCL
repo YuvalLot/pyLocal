@@ -1,0 +1,80 @@
+import Math;
+import List;
+
+package From{?x}
+	case ?x, ?seq then Add(1, ?x, ?y) & E(From{?y}, ?seq);
+
+set From
+	case ?x, ?seq then E(From{?x}, ?seq);
+
+set TakeSeq as recursive
+	case ?seq, 0, []
+	case ?seq, ?n, [?x * ?xs] then ?seq(?x, ?next) & Sub(?n, 1, ?m) & TakeSeq(?next, ?m, ?xs);
+
+set HdSeq
+	case ?seq, ?x then ?seq(?x, ?_);
+
+set TlSeq
+	case ?seq, ?x then ?seq(?_, ?x);
+
+set IndexSeq
+    case 0, ?seq, ?item then HdSeq(?seq, ?item)
+    case ?i, ?seq, ?item then TlSeq(?seq, ?tail) & Sub(?i, 1, ?j) & IndexSeq(?j, ?tail, ?item);
+
+package JoinSeqPackage {?seq1, ?seq2}
+	case ?x, ?seq then (?seq1(?x, ?ns1) & E(JoinSeqPackage {?ns1, ?seq2}, ?seq)) $ ?seq2(?x, ?seq);
+
+package FromListPackage {?list}
+	case ?x, ?seq then Hd(?list, ?x) & Tl(?list, ?xs) & E(?seq, FromListPackage{?xs});
+
+set ToList
+	case ?seq, ?xs then (?seq(?y, ?ys) & ToList(?ys, ?ls) & E(?xs, [?y * ?ls])) $ E(?xs, []);
+
+set JoinSeq
+	case ?seq1, ?seq2, ?seq3 then E(JoinSeqPackage {?seq1, ?seq2}, ?seq3);
+
+set FromList
+	case ?list, ?seq then E(FromListPackage{?list}, ?seq);
+
+package InterleavePackage {?seq1, ?seq2}
+	case ?x, ?seq then (?seq1(?x, ?restSeq1) & E( InterleavePackage{?seq2, ?restSeq1}, ?seq )) $ (?seq2(?x, ?seq));
+
+set Interleave
+	case ?seq1, ?seq2, ?seq then E(?seq, InterleavePackage {?seq1, ?seq2} );
+
+package MapPackage {?seq, ?f}
+	case ?x, ?nextSeq then ?seq(?y, ?t) & ?f(?y, ?x) & E(MapPackage{?t, ?f}, ?nextSeq);
+
+set MapSeq
+	case ?seq1, ?f, ?seq2 then E(MapPackage{?seq1, ?f}, ?seq2);
+
+package FilterPackage{?seq, ?p}
+	case ?x, ?nextSeq then ?seq(?y, ?ys) & (?p(?y) & E(?x, ?y) & E(?nextSeq, FilterPackage{?ys, ?p})) $ FilterPackage{?ys, ?p}(?x, ?nextSeq);
+
+set FilterSeq
+	case ?seq1, ?p, ?seq2 then E(FilterPackage{?seq1, ?p}, ?seq2);
+
+package ConsPackage{?item, ?seq}
+	case ?item, ?seq;
+
+set Cons
+	case ?item, ?seq, ?seq2 then E(ConsPackage{?item, ?seq}, ?seq2);
+
+set Next
+	case ?seq, ?item, ?nextSeq then ?seq(?item, ?nextSeq);
+
+set DropSeq as recursive
+	case ?seq, 0, ?seq
+	case ?seq, ?n, ?nSeq then ?seq(?_, ?next) & Sub(?n, 1, ?m) & DropSeq(?next, ?m, ?nSeq);
+
+package IteratesPackage{?first, ?f}
+	case ?first, ?seq then ?f(?first, ?second) & E(IteratesPackage{?second, ?f}, ?seq);
+
+set Iterates
+	case ?x, ?f, ?seq then E(?seq, IteratesPackage{?x, ?f});
+
+package SeriesPackage{?value, ?seq}
+    case ?value, ?nextSeq then Next(?seq, ?x, ?xs) & Add(?value, ?x, ?newValue) & E(SeriesPackage{?newValue, ?xs}, ?nextSeq);
+
+set Series
+    case ?seq, ?ser then Next(?seq, ?value, ?nextSeq) & E(?ser, SeriesPackage{?value, ?nextSeq});

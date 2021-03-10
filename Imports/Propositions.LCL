@@ -1,0 +1,74 @@
+
+import Strings;
+import Predicates;
+import Sets;
+
+declare Atom, Neg, Conj, Disj;
+
+set Repr
+	case True, "True"
+	case False, "False"
+	case Atom(?x), ?r then E(?r, "?x")
+	case Neg(?x), ?y then _repr(?x, ?r) & Format("~(%)", [?r], ?y)
+	case Conj(?p, ?q), ?y then _repr(?p, ?rp) & _repr(?q, ?rq) & Format("(%) & (%)", [?rp, ?rq], ?y)
+	case Disj(?p, ?q), ?y then _repr(?p, ?rp) & _repr(?q, ?rq) & Format("(%) | (%)", [?rp, ?rq], ?y);
+
+set Eval
+	case True, True
+	case False, False
+	case Neg(?x), ?y then (Eval(?x, False) & E(?y, True)) $ Eval(?y, False)
+	case Conj(?x, ?y), ?e then (Eval(?x, False) & E(?e, False)) $ Eval(?y, ?e)
+	case Disj(?x, ?y), ?e then (Eval(?x, True) & E(?e, True)) $ Eval(?y, ?e);
+
+set Implies
+	case ?p, ?q, Disj(Neg(?p), ?q);
+
+set Prop
+	case True
+	case False
+	case Atom(?x)
+	case Neg(?x) then Prop(?x)
+	case Conj(?x, ?y) then Prop(?x) & Prop(?y)
+	case Disj(?x, ?y) then Prop(?x) & Prop(?y);
+
+set NNF as recursive
+	case True, True
+	case False, False
+	case Atom(?x), Atom(?x)
+	case Neg(?x), ?y then NNFneg(?x, ?y)
+	case Conj(?p, ?q), Conj(?np, ?nq) then NNF(?p, ?np) & NNF(?q, ?nq)
+	case Disj(?p, ?q), Disj(?np, ?nq) then NNF(?p, ?np) & NNF(?q, ?nq);
+set NNFneg as recursive
+	case Atom(?x), Neg(Atom(?x))
+	case Neg(?x), ?y then NNF(?x, ?y)
+	case Conj(?p, ?q), Disj(?np, ?nq) then NNFneg(?p, ?np) & NNFneg(?q, ?nq)
+	case Disj(?p, ?q), Conj(?np, ?nq) then NNFneg(?p, ?np) & NNFneg(?q, ?nq);
+
+set Distrib as recursive
+	case ?p, Conj(?q, ?r), Conj(?x, ?y) then Distrib(?p, ?q, ?x) & Distrib(?p, ?r, ?y)
+	case Conj(?q, ?r), ?p, Conj(?x, ?y) then Distrib(?q, ?p, ?x) & Distrib(?r, ?p, ?y)
+	case ?p, ?q, Disj(?p, ?q) then E(1,1); # No conjunctions
+
+set xCNF as recursive
+	case Conj(?p, ?q), Conj(?x, ?y) then CNF(?p, ?x) & CNF(?q, ?y)
+	case Disj(?p, ?q), ?w then CNF(?p, ?x) & CNF(?q, ?y) & Distrib(?x, ?y, ?w)
+	case ?p, ?p then E(1,1);
+
+set CNF
+	case ?p, ?c then NNF(?p, ?pn) & xCNF(?pn, ?c);
+
+set Positives as recursive
+	case Atom(?x), [?x]
+	case Neg(Atom(?x)), []
+	case Disj(?p, ?q), ?list then Positives(?p, ?pp) & Positives(?q, ?qp) & Join(?pp, ?qp, ?list);
+set Negatives as recursive
+	case Atom(?x), []
+	case Neg(Atom(?x)), [?x]
+	case Disj(?p, ?q), ?list then Negatives(?p, ?pp) & Negatives(?q, ?qp) & Join(?pp, ?qp, ?list);
+
+set xTaut as recursive
+	case Conj(?p, ?q) then xTaut(?p) & xTaut(?q)
+	case ?p then Positives(?p, ?pp) & Negatives(?p, ?np) & Intersection(?pp, ?np, ?union) & ~E(?union, []);
+
+set Taut
+	case ?p then CNF(?p, ?c) & xTaut(?c);

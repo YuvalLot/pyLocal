@@ -1,0 +1,40 @@
+
+import Math;
+import List;
+
+set Flip as random, recursive
+    case 0
+    case 1;
+
+set RandBool as recursive
+    case then Flip(?x) & Flip(?y) & E(?x, ?y);
+
+set RandInt as recursive
+    case ?x, ?x, ?x
+    case ?x, ?y, ?z then Sub(?y, ?x, ?dif) & Half(?dif, ?half) & Add(?half, ?x, ?mid) & Add(?mid, 1, ?midp1) &
+                         ((RandBool() & RandInt(?x, ?mid, ?z)) $ (RandInt(?midp1, ?y, ?z)));
+
+set Choice as recursive
+    case [], ?x then NOT
+    case [?x], ?x
+    case ?L, ?x then Len(?L, ?len) & Sub(?len, 1, ?lastIndex) & RandInt(0, ?lastIndex, ?i) & Index(?i, ?L, ?x);
+
+set Shuffle as recursive
+    case [], []
+    case ?l1, [?item * ?l2Updated] then Choice(?l1, ?item) & Removed(?item, ?l1, ?l1Updated) & Shuffle(?l1Updated, ?l2Updated);
+
+set RandDigit as random, recursive
+    case 0
+    case 1
+    case 2
+    case 3
+    case 4
+    case 5
+    case 6
+    case 7
+    case 8
+    case 9;
+
+set RandNum
+    case ?x then RandDigit(?d1) & RandDigit(?d2) & RandDigit(?d3) & RandDigit(?d4) & RandDigit(?d5) & RandDigit(?d6)
+               & E(0.?d1?d2?d3?d4?d5?d6, ?x);
