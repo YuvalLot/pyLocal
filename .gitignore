@@ -1,6 +1,7 @@
 
 build/*
 venv/*
+Atom-Editor-Style/*
 
 /Setup.py
 
