@@ -2,6 +2,7 @@
 build/*
 venv/*
 Atom-Editor-Style/*
+.idea/*
 
 /Setup.py
 
