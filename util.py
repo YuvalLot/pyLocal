@@ -206,6 +206,9 @@ def smart_replace(string, replace_dict):
     :return: str
     """
 
+    if "..." in replace_dict:
+        string = string.replace("...", replace_dict["..."])
+
     current_var = ""
     new_s = ""
     inQuote = False
@@ -418,6 +421,7 @@ def processSolutionDict(sol_dict):
     :param sol_dict: dict
     :return: str
     """
+
     if sol_dict == {}:
         return {}
 

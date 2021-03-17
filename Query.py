@@ -187,7 +187,7 @@ class Query:
         if depth.count < 0:
             return
 
-        # print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
+        print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
 
         if self.interpreter.trace_on:
             self.interpreter.message(f"Searching for {self.__str__()}")

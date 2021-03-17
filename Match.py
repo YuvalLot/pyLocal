@@ -5,6 +5,7 @@ Match
 Class that matches two patterns, a query pattern and a case pattern
 
 """
+import functools
 
 from util import match_type, smart_replace, splitWithoutParen, processParen, \
     lookup, get_all_basics, processHead
@@ -12,7 +13,6 @@ from util import match_type, smart_replace, splitWithoutParen, processParen, \
 
 # Class used to match two patterns
 class MatchDictionary:
-
     index = 1
 
     # A method that receives a datatype list, head or title, and transforms each variable into a new variable
@@ -36,7 +36,7 @@ class MatchDictionary:
                     cls.index += 1
                     target[basic] = new_var
                 r_d[basic] = new_var
-                
+
         return smart_replace(component, r_d)
 
     # DONE
@@ -54,7 +54,7 @@ class MatchDictionary:
 
     # DONE
     @classmethod
-    def match(cls, interp, patternA:str, patternB:str):
+    def match(cls, interp, patternA: str, patternB: str):
         """
         Matches two patterns
 
@@ -63,6 +63,13 @@ class MatchDictionary:
         :param patternB: str
         :return: (forward:dict, backward:dict, bool)
         """
+
+        if patternB == "...":
+            MD = MatchDictionary(interp)
+            forward = {"...": f"[{patternA}]"}
+            backward = functools.reduce(lambda a, b: a.update(b) or a, [{d: d for d in get_all_basics(comp) if match_type(d) == "var"} for comp in splitWithoutParen(patternA)], {})
+            return forward, backward, False
+
         MD = MatchDictionary(interp)
         matched = MD.outside_push(patternA, patternB)
         if not matched:
@@ -79,7 +86,7 @@ class MatchDictionary:
 
         if len(comps_A) != len(comps_B):
             return False
-        
+
         for i in range(len(comps_A)):
             compA = comps_A[i]
             compB = comps_B[i]
@@ -237,7 +244,7 @@ class MatchDictionary:
                 if match_type(b) == 'var' and self.forward[b] in self.inside.keys():
                     self.forward[b] = self.inside[self.forward[b]]
             return True
-        
+
         else:
             c_basics = get_all_basics(c_list)
             c_trans = MatchDictionary.transform(c_list, c_basics, self.forward)
@@ -336,7 +343,7 @@ class MatchDictionary:
         return self.o_single_push(q_comps[0], c_comps[0]) and self.o_single_push(q_comps[1], "[" + ",".join(c_comps[1:]) + "]")
 
     def o_title_with_title(self, q_title, c_title):
-        
+
         q_name, _, q_pat = q_title.partition("(")
         q_pat = q_pat[:-1]
 
@@ -588,7 +595,7 @@ class MatchDictionary:
 
     def i_var_with_list(self, i1_var, i2_list):
         i2_list = smart_replace(i2_list, self.inside)
-        if i1_var+"," in i2_list or i1_var+"]" in i2_list or i1_var+"*" in i2_list or i1_var+")" in i2_list:
+        if i1_var + "," in i2_list or i1_var + "]" in i2_list or i1_var + "*" in i2_list or i1_var + ")" in i2_list:
             return False
         if i1_var in self.inside.keys():
             i1_to = self.inside[i1_var]
@@ -675,7 +682,7 @@ class MatchDictionary:
         else:
             self.inside[i1_var] = i2_pack
             return True
-    
+
     def update(self):
 
         found_repeat = False
@@ -706,14 +713,14 @@ class MatchDictionary:
 
 
 if __name__ == "__main__":
-    
     class Foo:
         titles = ['^+', '^-', '^*', '^/', '^d>'] + ["mem"]
         infixes = titles
         packages_names = ["Addition"]
-    
-    pA = '(?a1^d>?x1)^+(?a2^d>?x2),?a3,?a3^d>?x3'
-    pB = '(A^d>3)^+(B^d>7),C,?sol'
+
+
+    pA = '?x,?y,?z'
+    pB = '...'
 
     # SampleTree(?x) & BinaryTree(?x)
 
