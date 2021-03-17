@@ -22,3 +22,6 @@ set Scope
 
 set Rcopy
     case ?x, ?y then hCopy(?x, ?y);
+
+set Flush
+    case then hFlush();

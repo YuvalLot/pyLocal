@@ -32,6 +32,7 @@ reserved = {
 
 # tokens
 tokens = [
+    'CUT',
     'EXCLAMATION',
     'STRING',
     'EQ',
@@ -60,6 +61,7 @@ tokens = [
  ] + list(reserved.values())
 
 # set regular expressions for tokens
+t_CUT = r'\-cut\-'
 t_EXCLAMATION = r'\!'
 t_COLON = r':'
 t_EQ = r'='

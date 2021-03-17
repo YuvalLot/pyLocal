@@ -68,8 +68,8 @@ class Query:
         # looking for ands
         searchForAnd = splitWithoutParen(query, "&")
         if len(searchForAnd) != 1:
-            self.gateA = Query.create(self.interpreter, searchForAnd[0])
-            self.gateB = Query.create(self.interpreter, "&".join(searchForAnd[1:]))
+            self.gateB = Query.create(self.interpreter, searchForAnd[-1])
+            self.gateA = Query.create(self.interpreter, "&".join(searchForAnd[:-1]))
             self.type = '&'
             return
 
@@ -185,7 +185,6 @@ class Query:
         """
 
         if depth.count < 0:
-            print("Exited due to recursion limit")
             return
 
         # print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
@@ -328,6 +327,14 @@ class Query:
                 if len(parts) != 1 or match_type(parts[0]) != "constant" or parts[0] not in self.interpreter.references:
                     return
                 del self.interpreter.references[parts[0]]
+                yield {}
+                return
+
+            if query_name == "hFlush" and self.interpreter.ref_added:
+                if query_pat != "":
+                    return
+                self.interpreter.references = {}
+                self.interpreter.memory = []
                 yield {}
                 return
 
@@ -799,7 +806,6 @@ class Query:
 
             if predicate_match:
                 for search, backward, forwards in predicate_match.match(query_pat):
-
                     if search == 1:
                         solution = forwards
                         solution_as_dict = {}
@@ -847,6 +853,15 @@ class Query:
 
         # and clause
         if self.type == "&":
+
+            if self.gateB.gateA == "-cut-":
+                try:
+                    yield next(self.gateA.search(depth))
+                except StopIteration:
+                    pass
+                finally:
+                    return
+
             for p_solution in self.gateA.search(depth):
 
                 # print(f"The solution to {str(self.gateA)} is {str(p_solution)}")

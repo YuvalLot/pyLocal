@@ -27,10 +27,10 @@ def splitWithoutParen(string, splitter=","):
     for char in string:
         if char == "\"":
             inQuote = not inQuote
-        if char in "([{<" and not inQuote:
+        if char in "([{" and not inQuote:
             current_paren += 1
             current_element += char
-        elif char in ")]}>" and not inQuote:
+        elif char in ")]}" and not inQuote:
             current_paren -= 1
             current_element += char
         elif char == splitter and not inQuote:
@@ -684,9 +684,9 @@ def splitByInfix(string, infx):
     for i in range(len(string)-n):
         if string[i] == '"':
             inQuote = not inQuote
-        if string[i] in "([{<":
+        if string[i] in "([{":
             count += 1
-        if string[i] in ")]}>":
+        if string[i] in ")]}":
             count -= 1
 
         if string[i:i+n] == infx and count == 0 and not inQuote:
@@ -837,4 +837,4 @@ class Counter:
 
 
 if __name__ == "__main__":
-    print(processHead("[1,2,[3*[1,2]]]"))
+    print(lookup("(A^d>3)^+(B^d>7)", ['^+', '^d>']))

@@ -1084,7 +1084,7 @@ class Interpreter:
         :return: None
         """
 
-        if not unP and not  self.save_added:
+        if not unP and not self.save_added:
             self.references = {}
             self.memory = []
 

@@ -21,7 +21,7 @@ class InfixesTest(Testing.TestingSuper.Testing):
                                & Mul(?ea, ?eb, ?c) 
            case (?a ^/ ?b), ?c then Eval(?a, ?ea) & Eval(?b, ?eb)
                                & Div(?ea, ?eb, ?c) 
-           case ?x, ?x then E(1,1);
+           case ?x, ?x then True();
 
         set AppendEval
             case ([] ^app ?xs), ?xs

@@ -93,6 +93,10 @@ class MatchDictionary:
 
         compA = processParen(compA)
         compB = processParen(compB)
+
+        if compB == "_" or compA == "_":
+            return True
+
         if not compA or not compB:
             return
 
@@ -339,11 +343,14 @@ class MatchDictionary:
         c_name, _, c_pat = c_title.partition("(")
         c_pat = c_pat[:-1]
 
+        if q_name != c_name:
+            return False
+
         return self.outside_push(q_pat, c_pat)
 
     def o_var_with_title(self, q_var, c_title):
 
-        self.wiggle_room = True;
+        self.wiggle_room = True
 
         c_name, _, c_pat = c_title.partition("(")
 
@@ -471,6 +478,10 @@ class MatchDictionary:
         return True
 
     def i_single_push(self, compA, compB):
+
+        if compA == "_" or compB == "_":
+            return True
+
         typeA = match_type(compA)
         typeB = match_type(compB)
 
@@ -697,12 +708,12 @@ class MatchDictionary:
 if __name__ == "__main__":
     
     class Foo:
-        titles = ['^+', '^-', '^*', '^/'] + ["mem"]
+        titles = ['^+', '^-', '^*', '^/', '^d>'] + ["mem"]
         infixes = titles
         packages_names = ["Addition"]
     
-    pA = '[?x1*[?x2*?xs]]'
-    pB = '[1,2,3,4,5,6]'
+    pA = '(?a1^d>?x1)^+(?a2^d>?x2),?a3,?a3^d>?x3'
+    pB = '(A^d>3)^+(B^d>7),C,?sol'
 
     # SampleTree(?x) & BinaryTree(?x)
 
