@@ -1,4 +1,4 @@
-
+import time
 from util import processParen, splitWithoutParen, outString, joinPrint, smart_replace, smartUpdate, \
     formatPrint, remove_whitespace, processHead, Counter, match_type, find_package_end, unfold
 from Match import MatchDictionary
@@ -11,9 +11,6 @@ import hashlib
 from random import random, randint
 
 
-_sols = 1
-
-
 # Query Class
 class Query:
     """
@@ -22,6 +19,8 @@ class Query:
     Queries can be simple, or they can include many logical gates (see more in solving techniques).
 
     """
+
+    start = 0
 
     def __init__(self, interpreter):
         """
@@ -187,7 +186,7 @@ class Query:
         if depth.count < 0:
             return
 
-        print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
+        # print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
 
         if self.interpreter.trace_on:
             self.interpreter.message(f"Searching for {self.__str__()}")
@@ -206,16 +205,10 @@ class Query:
             else:
                 flag = False
 
-            while flag:
+            if flag:
                 query_pat = self.interpreter.macroSimplified(query_pat, depth)
                 if query_pat is None:
                     return
-                for mac in self.interpreter.macros:
-                    if mac in query_pat:
-                        flag = True
-                        break
-                else:
-                    flag = False
 
             if query_name == "True":
                 yield {}
@@ -235,6 +228,22 @@ class Query:
                     for sol in Q.search(depth):
                         complete_sol = smartUpdate(sol_with_predicate, sol)
                         yield complete_sol
+                return
+
+            if query_name == "Time":
+                parts = splitWithoutParen(query_pat)
+                if len(parts) != 1:
+                    return
+                m = MatchDictionary.match(self.interpreter, parts[0], str((time.time() - Query.start).__round__(2)))
+                if m:
+                    yield m[1]
+                return
+
+            if query_name == "ClockInit":
+                if query_pat != "":
+                    return
+                Query.start = time.time()
+                yield {}
                 return
 
             # Break predicate
@@ -293,6 +302,7 @@ class Query:
                 yield {}
                 return
 
+            # Get Reference
             if query_name == "hRef" and self.interpreter.ref_added:
                 parts = splitWithoutParen(query_pat)
                 if len(parts) != 2 or match_type(parts[0]) != "constant" or parts[0] not in self.interpreter.references:
@@ -301,12 +311,40 @@ class Query:
                     ref = 'nil'
                 else:
                     ref = self.interpreter.memory[self.interpreter.references[parts[0]]]
-                # Build([1,2,3,4], ?x)
+
                 if ref is None:
                     self.interpreter.raiseError("Error: Trying to access a deleted value.")
                     return
                 t = MatchDictionary.match(self.interpreter, parts[1], ref)
                 if t:
+                    yield t[1]
+                return
+
+            # From reference to another
+            if query_name == "FromRef" and self.interpreter.ref_added:
+                # Init(r) & Ref(r, 5) & FromRef(r, ?x >> ADD(1, ?x))
+                parts = splitWithoutParen(query_pat)
+                if len(parts) != 2 or match_type(parts[0]) != "constant" or parts[0] not in self.interpreter.references:
+                    return
+                if self.interpreter.references[parts[0]] == 'nil':
+                    self.interpreter.raiseError("Error: attempting to change from an empty reference.")
+                    return
+                else:
+                    ref = self.interpreter.memory[self.interpreter.references[parts[0]]]
+                if ref is None:
+                    self.interpreter.raiseError("Error: Trying to access a deleted value.")
+                    return
+                if ">>" not in parts[1]:
+                    self.interpreter.raiseError("Error: illegal pattern for from reference.")
+                    return
+                toMatch, _, toChange = parts[1].partition(">>")
+                print(toMatch, toChange)
+                t = MatchDictionary.match(self.interpreter, toMatch, ref)
+                if t:
+                    toReplace = smart_replace(toChange, t[1])
+                    if any(mac in toReplace for mac in self.interpreter.macros):
+                        toReplace = self.interpreter.macroSimplified(toReplace, depth, simplify_arrow=True)
+                    self.interpreter.memory[self.interpreter.references[parts[0]]] = toReplace
                     yield t[1]
                 return
 
@@ -741,7 +779,7 @@ class Query:
                         return
 
                 if query_name == "AssertCE":
-                    to_match, _, then = body.partition("->")
+                    to_match, _, then = body.partition(">>")
                     to_match, then = processParen(to_match), processParen(then)
                     if not to_match or not then:
                         return
@@ -749,7 +787,7 @@ class Query:
                     yield {}
                     return
                 if query_name == "AssertC":
-                    to_match, _, then = body.partition("->")
+                    to_match, _, then = body.partition(">>")
                     to_match, then = processParen(to_match), processParen(then)
                     if not to_match or not then:
                         return
@@ -774,7 +812,7 @@ class Query:
                     else:
                         return
                 if query_name == 'DeleteC':
-                    to_match, _, then = body.partition("->")
+                    to_match, _, then = body.partition(">>")
                     to_match, then = processParen(to_match), processParen(then)
                     if to_match in predicate_changed.cases:
                         index = predicate_changed.cases.index(to_match)
@@ -797,6 +835,16 @@ class Query:
                     yield {}
                     return
 
+                return
+
+            if query_name in self.interpreter.domains:
+                domain = self.interpreter.domains[query_name]
+                print(f"Found the domain {domain.name}")
+                for sol in domain.search(depth, query_pat):
+                    print(f"Found a solution {sol}")
+                    m = MatchDictionary.match(self.interpreter, query_pat, smart_replace(domain.raw_vars, sol))
+                    if m:
+                        yield m[1]
                 return
 
             if query_name not in self.interpreter.predicates_names:
@@ -973,3 +1021,4 @@ class Query:
                 return
             new_query = Query.create(self.interpreter, f"{query_name}({query_pat})")
             yield from new_query.search(depth)
+            return

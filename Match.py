@@ -714,14 +714,14 @@ class MatchDictionary:
 
 if __name__ == "__main__":
     class Foo:
-        titles = ['^+', '^-', '^*', '^/', '^d>'] + ["mem"]
+        titles = ['^+', '^-', '^*', '^/', '^=:=', "n"] + ["mem"]
         infixes = titles
         packages_names = ["Addition"]
 
 
-    pA = '?x,?y,?z'
-    pB = '...'
+    pA = '0^=:=n(^+(0,^+(1,^+(0,0)))),1'
+    pB = '?a^=:=?b,?e'
 
-    # SampleTree(?x) & BinaryTree(?x)
+    # sat(?a1 ^=:= (?a2 ^* ?a3 ^* ?a4 ^* ?a5 ^* ?a6), 1) & sat(?a2 ^=:= n(?a3 ^+ ?a4 ^+ ?a5 ^+ ?a6), 1)
 
     print(MatchDictionary.match(Foo, pA, pB))

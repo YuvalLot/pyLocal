@@ -6,7 +6,7 @@ Includes three classes: Predicate, Query and Interpreter, with the Interpreter c
 This file is the main solving engine that fuels the back chaining algorithm in Local
 
 """
-
+from Domain import Domain
 from util import processParen, splitWithoutParen, smart_replace, \
     Counter, processConnectClause, processSolutionDict, match_type
 from Match import MatchDictionary
@@ -53,7 +53,7 @@ class Interpreter:
         self.messageLoad = []
 
     # Empty Interpreter
-    def __init__(self, time_limit, imports, path=None):
+    def __init__(self, time_limit, imports, path=None, update_delete = True):
         """
         Initiate an empty interpreter. Interpreter read lines of codes and builds database. It also navigates between the different components
         of problem solving.
@@ -62,6 +62,9 @@ class Interpreter:
         :param imports: list of str
         :param path: str (path to imports, used in unit testing)
         """
+
+        if update_delete:
+            self.deleted = False
 
         # For Printing
         self.newline = False
@@ -101,6 +104,8 @@ class Interpreter:
 
         self.titles = []  # List of titles.
         self.infixes = []  # List of infixes
+
+        self.domains = {}
 
         self.memory = []
         self.references = {}
@@ -221,7 +226,7 @@ class Interpreter:
         :return: None
         """
 
-        # starting tokens : ('PACKAGE', 'IMP', 'SET', 'EXTEND', 'USE', 'CONNECT')
+        # starting tokens : ('PACKAGE', 'IMP', 'SET', 'EXTEND', 'USE', 'CONNECT', 'DOMAIN')
         properties = ('recursive', 'generative', 'random')
         line = 1
 
@@ -259,6 +264,24 @@ class Interpreter:
         closed_predicate_prop_second = False
         moved_to_cases_predicate = False
         moved_to_then_predicate = False
+
+        # Domain
+        in_domain = False
+        new_domain = None
+        domain_name = ""
+
+        domain_entered_vars = False
+        domain_variables = ""
+
+        domain_new_range = False
+        domain_var_range = ""
+        domain_moved_to_search = False
+        domain_range = ""
+
+        domain_moved_to_const = False
+        domain_const = ""
+        domain_is_const = False
+        domain_elim = ""
 
         # Import Variables
         in_imp = False
@@ -341,6 +364,16 @@ class Interpreter:
                     return
                 in_imp = True
 
+            elif token.type == 'DOMAIN':
+                if in_domain:
+                    self.raiseError(f'Error: can declare a domain inside another domain, in line {line}.')
+                    return
+                in_domain = True
+                if more_than_one():
+                    self.raiseError(f'Error: Attempting to declare a domain inside another statement, in line {line}.')
+                    return
+                in_domain = True
+
             elif token.type == 'SET':
                 if in_set:
                     self.raiseError(f'Error: can not set inside another set, in line {line}')
@@ -410,6 +443,47 @@ class Interpreter:
                 in_con = True
 
             elif token.type == 'SEMI':
+
+                if in_domain:
+                    if not domain_name or new_domain is None:
+                        self.raiseError(f"Error: Domain declaration missing, in line {line}")
+                        return
+                    if not domain_moved_to_const:
+                        if not new_domain.insert_range(domain_var_range, domain_range, line):
+                            return
+                    if not new_domain.complete():
+                        self.raiseError(f"Error: In domain {domain_name}, some domain variables missing, in line {line}")
+                        return
+                    if not domain_moved_to_const:
+                        self.raiseError(f"Error: Must specify constraints in domain {domain_name}, in line {line}")
+                        return
+                    if domain_const != "":
+                        if not new_domain.insert_constraint(domain_const, line):
+                            print(f"This caused an error, '{domain_const}'")
+                            return
+                    if domain_elim != "":
+                        if not new_domain.insert_elimination(domain_elim, line):
+                            return
+
+                    self.domains[new_domain.name] = new_domain
+
+                    # reset domain vars
+                    in_domain = False
+                    new_domain = None
+                    domain_name = ""
+
+                    domain_entered_vars = False
+                    domain_variables = ""
+
+                    domain_new_range = False
+                    domain_var_range = ""
+                    domain_moved_to_search = False
+                    domain_range = ""
+
+                    domain_moved_to_const = False
+                    domain_const = ""
+                    domain_is_const = False
+                    domain_elim = ""
 
                 if in_imp:
                     in_imp = False
@@ -697,6 +771,11 @@ class Interpreter:
                         break  # No more input
                     new_tokens.append(tok)
 
+                if len(Lexer.SyntaxErrors) != 0:
+                    self.raiseError(Lexer.SyntaxErrors[0])
+                    Lexer.SyntaxErrors = []
+                    return
+
                 self.read(new_tokens)
                 f.close()
 
@@ -961,6 +1040,107 @@ class Interpreter:
                         self.raiseError(f"Error: Illegal token '{token.value}', in line {line}")
                     con_then += token.value
 
+            elif in_domain:
+                if domain_name == "":
+                    if token.type != "NAME":
+                        self.raiseError(f"Error: Domain Name '{token.value}' illegal, in line {line}")
+                        return
+                    domain_name = token.value
+                    new_domain = Domain(self, domain_name)
+
+                elif token.type == "OF":
+                    domain_moved_to_search = False
+                    domain_new_range = True
+                    if not domain_variables:
+                        self.raiseError(f"Error: Domain {domain_name} without variables, in line {line}")
+                        return
+
+                    if domain_moved_to_const:
+                        self.raiseError(f"Error: Domain {domain_name} already defined constraints, in line {line}")
+                        return
+
+                    if domain_entered_vars:
+                        domain_entered_vars = False
+                        if not new_domain.insert_variables(domain_variables, line):
+                            return
+                        domain_new_range = True
+
+                    else:
+                        if not domain_range:
+                            self.raiseError(f"Error: In domain {domain_name}, attempting to define a range of new variable "
+                                            f"with an empty definition for {domain_var_range}, in line {line}")
+                            return
+                        if not new_domain.insert_range(domain_var_range, domain_range, line):
+                            return
+                        domain_var_range = ""
+                        domain_range = ""
+
+                elif token.type == "OVER":
+                    if domain_entered_vars:
+                        self.raiseError(f"Error: Domain variables defines twice, in line {line}")
+                        return
+                    domain_entered_vars = True
+
+                elif token.type == "CONST":
+                    domain_is_const = True
+                    if domain_moved_to_const:
+                        if domain_const != "":
+                            if not new_domain.insert_constraint(domain_const, line):
+                                return
+                        if domain_elim != "":
+                            if not new_domain.insert_elimination(domain_elim, line):
+                                return
+                    else:
+                        if not new_domain.insert_range(domain_var_range, domain_range, line):
+                            return
+                        domain_moved_to_const = True
+                    domain_const = ""
+                    domain_elim = ""
+
+                elif token.type == "ELIM":
+                    domain_is_const = False
+                    if domain_moved_to_const:
+                        if domain_const != "":
+                            if not new_domain.insert_constraint(domain_const, line):
+                                return
+                        if domain_elim != "":
+                            if not new_domain.insert_elimination(domain_elim, line):
+                                return
+                    else:
+                        if not new_domain.insert_range(domain_var_range, domain_range, line):
+                            return
+                        domain_moved_to_const = True
+                    domain_const = ""
+                    domain_elim = ""
+
+                elif domain_entered_vars and not domain_new_range and not domain_moved_to_const:
+                    domain_variables += token.value
+
+                elif token.type == "COLON":
+                    if domain_moved_to_const:
+                        self.raiseError(f"Error: Illegal colon, in line {line}")
+                        return
+                    domain_moved_to_search = True
+
+                elif domain_new_range and not domain_moved_to_const:
+                    if not domain_moved_to_search:
+                        if domain_var_range != "":
+                            self.raiseError(f"Error: Single domain variable, in line {line}")
+                            return
+                        domain_var_range = token.value
+                    else:
+                        domain_range += token.value
+
+                elif domain_moved_to_const:
+                    if domain_is_const:
+                        domain_const += token.value
+                    else:
+                        domain_elim += token.value
+
+                else:
+                    self.raiseError(f"Error: Illegal token '{token.value}', in line {line}")
+                    return
+
             else:
                 self.raiseError(f"Error: Illegal start of statement '{token.value}', in line {line}")
                 return
@@ -1023,18 +1203,27 @@ class Interpreter:
         print(f"Infixes: {self.infixes}")
 
     # Macros
-    def macroSimplified(self, pat, depth):
+    def macroSimplified(self, pat, depth, simplify_arrow=False):
         """
         Simplifies macro expressions.
 
+        :param simplify_arrow: bool
         :param depth: Counter
         :param pat: str
         :return: str
         """
+        if not pat.strip():
+            return ""
         final = []
         for comp in splitWithoutParen(pat):
             t = match_type(comp)
-            if t == "var" or t == "constant":
+            if ">>" in comp:
+                if simplify_arrow:
+                    a, _, b = comp.partition(">>")
+                    final.append(f"{self.macroSimplified(a, depth)}>>{self.macroSimplified(b, depth)}")
+                else:
+                    final.append(comp)
+            elif t == "var" or t == "constant":
                 final.append(comp)
             elif t == "list":
                 final.append("[" + self.macroSimplified(comp[1:-1], depth) + "]")
@@ -1129,6 +1318,8 @@ class Interpreter:
                 processed_solution = processSolutionDict(solution)
                 yield processed_solution
                 recursion_limit.count = original_recursion_limit
+
+        # print(self.memory, "\n", self.references)
 
 
 if __name__ == '__main__':

@@ -67,7 +67,7 @@ class RandomTypesSaveTest(Testing):
             else:
                 count[sols[0]["?c"]] += 1
 
-        self.assertLess(abs(count["0"]-count["1"]), 20)
+        self.assertLess(abs(count["0"]-count["1"]), 35)
 
     def test_Random_RandBool(self):
 
@@ -111,7 +111,7 @@ class RandomTypesSaveTest(Testing):
             count[sols[0]["?x"]] += 1
         expected = N // (len(l))
         for key in count.keys():
-            self.assertLessEqual(abs(count[key] - expected), 10 / 100 * N)
+            self.assertLessEqual(abs(count[key] - expected), 10 / 100 * N + 2)
 
     def test_Random_Choice(self):
 

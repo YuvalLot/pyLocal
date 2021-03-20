@@ -27,11 +27,17 @@ reserved = {
     'infix': 'INFIX',
     'ALL': 'ALL',
     'connect': 'CON',
-    'bundle': 'BUNDLE'
+    'bundle': 'BUNDLE',
+    'domain': 'DOMAIN',
+    'over': 'OVER',
+    'elim': 'ELIM',
+    'of': 'OF',
+    'const': 'CONST'
 }
 
 # tokens
 tokens = [
+    'ARROW',
     'CUT',
     'EXCLAMATION',
     'STRING',
@@ -61,6 +67,7 @@ tokens = [
  ] + list(reserved.values())
 
 # set regular expressions for tokens
+t_ARROW = r'>>'
 t_CUT = r'\-cut\-'
 t_EXCLAMATION = r'\!'
 t_COLON = r':'
@@ -155,10 +162,11 @@ if __name__ == "__main__":
     l = build()
     l.input("""
     
-    import Math;
-
-    set on-start
-        case then Print("hello");
+    domain X
+   over ?x, ?y
+   of ?x : A(?x)
+   of ?y : A(?y)
+   const B(?x, ?y);
     
     """)
     ts = []
@@ -166,5 +174,5 @@ if __name__ == "__main__":
         tk = l.token()
         if not tk:
             break
-        print(tk)
-    print(SyntaxErrors)
+        ts.append(tk)
+    print(SyntaxErrors, ts)

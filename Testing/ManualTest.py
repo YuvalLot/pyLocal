@@ -6,39 +6,11 @@ from main import imports
 lexer = Lexer.build()
 interpreter = Interpreter.Interpreter(10, imports, path="D:\\Yuval Lotenberg\\Documents\\LCL\\")
 
-nationalities = [
-    "norwegian",
-    "dane",
-    "brit",
-    "german",
-    "swede",
-]
+board = [['?a', '?b', '?c', '?d'], ['?e', '?f', '?g', '?h'], ['?i', '?j', '?k', '?l'], ['?m', '?n', '?o', '?p']]
 
-colors = [
-    "yellow",
-    "blue",
-    "red",
-    "green",
-    "white"
-]
+for i in range(len(board)):
+    print(f"elim not_unique([{board[i][0]}, {board[i][1]}, {board[i][2]}, {board[i][3]}])")
+for i in range(len(board)):
+    print(f"elim not_unique([{board[0][i]}, {board[1][i]}, {board[2][i]}, {board[3][i]}])")
 
-drinks = [
-    "water",
-    "tea",
-    "milk",
-    "beer",
-    "coffee"
-]
-
-s = []
-index = 1
-
-for nation in nationalities:
-    s.append(f"In(person({nation}, ?_{index}, ?_{index+1}, ?_{index+2}, ?_{index+3}), ?persons)")
-    index += 4
-
-for color in colors:
-    s.append(f"In(person(?_{index}, {color}, ?_{index + 1}, ?_{index + 2}, ?_{index + 3}), ?persons)")
-    index += 4
-
-print(" &\n".join(s))
+# X( ?a, ?b, ?c, ?d, ?e, ?f, ?g, ?h, ?i, ?j, ?k, ?l, ?m, ?n, ?o, ?p )

@@ -179,7 +179,8 @@ class Console:
         :param event: Any
         :return: None
         """
-        self.interpreter.__init__(self.interpreter.time_limit, self.interpreter.imports, self.interpreter.path)
+        self.interpreter.deleted = True
+        self.interpreter.__init__(self.interpreter.time_limit, self.interpreter.imports, self.interpreter.path, update_delete=False)
         self.sendMessage("\nAll Rules Deleted\n")
         self.solutions = None
 
@@ -249,6 +250,7 @@ class Console:
         :param arg: a filename.
         :return: None
         """
+        self.interpreter.deleted = False
         if self.searching:
             return
         if arg is not None:

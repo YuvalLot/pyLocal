@@ -11,8 +11,13 @@ set RandBool as recursive
 
 set RandInt as recursive
     case ?x, ?x, ?x
-    case ?x, ?y, ?z then Sub(?y, ?x, ?dif) & Half(?dif, ?half) & Add(?half, ?x, ?mid) & Add(?mid, 1, ?midp1) &
-                         ((RandBool() & RandInt(?x, ?mid, ?z)) $ (RandInt(?midp1, ?y, ?z)));
+    case ?x, ?y, ?z then
+        RandNum(?r) &
+        Sub(?y, ?x, ?temp1) &
+        Add(?temp1, 1, ?temp2) &
+        Mul(?r, ?temp2, ?temp3) &
+        Add(?temp3, ?x, ?alz) &
+        Floor(?alz, ?z);
 
 set Choice as recursive
     case [], ?x then NOT

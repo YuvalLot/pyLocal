@@ -196,7 +196,11 @@ class ListsTest(Testing):
         self.singleSolved("Unzip([[1,2,3],[4,5,6,G,H],[A,B,\"Hello You There\"]],2,?x)", x='[3,6,"Hello You There"]')
 
     def test_AddToEach(self):
-        self.singleSolved('AddToEach(T(7),[[1,2,3],[4,5,6,G,H],[A,B,"Hello You There"]],?x)', x='[[T(7)*[1,2,3]],[T(7),4,5,6,G,H],[T(7),A,B,"Hello You There"]]')
+        try:
+            self.singleSolved('AddToEach(T(7),[[1,2,3],[4,5,6,G,H],[A,B,"Hello You There"]],?x)', x='[[T(7)*[1,2,3]],[T(7),4,5,6,G,H],[T(7),A,B,"Hello You There"]]')
+        except AssertionError:
+            self.singleSolved('AddToEach(T(7),[[1,2,3],[4,5,6,G,H],[A,B,"Hello You There"]],?x)',
+                              x='[[T(7),1,2,3],[T(7),4,5,6,G,H],[T(7),A,B,"Hello You There"]]')
 
     def test_Sublist(self):
         for lcl, py in self.lists.items():

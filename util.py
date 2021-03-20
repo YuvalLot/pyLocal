@@ -713,8 +713,12 @@ def lookup(string, infixes):
     :return: str
     """
 
+    if len(infixes) == 0:
+        return string
+
     string = processParen(string)
-    if not string: return False
+    if not string:
+        return False
 
     inside = False
 
@@ -735,6 +739,23 @@ def lookup(string, infixes):
             if not up1 or not up2:
                 return False
             return f'{infx}({up1},{up2})'
+
+    t = match_type(string)
+    if t == "list":
+        parts = splitWithoutParen(string[1:-1])
+        final = []
+        for part in parts:
+            final.append(lookup(part, infixes))
+        return "[" + ",".join(final) + "]"
+    if t == "title":
+        title, _, rest = string.partition('(')
+        rest = splitWithoutParen(rest[:-1])
+        final = []
+        for part in rest:
+            final.append(lookup(part, infixes))
+        if False in final:
+            return False
+        return title + "(" + ",".join(final) + ")"
 
     return string
 
@@ -841,4 +862,4 @@ class Counter:
 
 
 if __name__ == "__main__":
-    print(lookup("(A^d>3)^+(B^d>7)", ['^+', '^d>']))
+    print(lookup("0^=:=n(^+(0,^+(1,^+(0,0))))", ['^+', '^=:=']))
