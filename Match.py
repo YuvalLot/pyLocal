@@ -122,9 +122,13 @@ class MatchDictionary:
 
         if typeA in ['list', 'head']:
             compA = processHead(compA)
+            if not compA:
+                return False
             typeA = match_type(compA)
         if typeB in ['list', 'head']:
             compB = processHead(compB)
+            if not compB:
+                return False
             typeB = match_type(compB)
 
         if typeA == 'constant' and typeB == 'constant':
@@ -719,8 +723,8 @@ if __name__ == "__main__":
         packages_names = ["Addition"]
 
 
-    pA = '0^=:=n(^+(0,^+(1,^+(0,0)))),1'
-    pB = '?a^=:=?b,?e'
+    pA = '1,[?x,?y,?z],a,[?1,?2,?3]'
+    pB = '?prop1,[?prop1*_],?prop2,[?prop2*_]'
 
     # sat(?a1 ^=:= (?a2 ^* ?a3 ^* ?a4 ^* ?a5 ^* ?a6), 1) & sat(?a2 ^=:= n(?a3 ^+ ?a4 ^+ ?a5 ^+ ?a6), 1)
 

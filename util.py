@@ -349,7 +349,7 @@ def processHead(string: str):
         if tail == "[]":
             return f"[{hd}]"
         return f"[{hd},{tail[1:-1]}]"
-    if tail_type == 'head' or tail_type == 'var':
+    if tail_type == 'head' or tail_type == 'var' or tail == "_":
         return f"[{hd}*{tail}]"
 
 
@@ -862,4 +862,4 @@ class Counter:
 
 
 if __name__ == "__main__":
-    print(lookup("0^=:=n(^+(0,^+(1,^+(0,0))))", ['^+', '^=:=']))
+    print(processHead("[?x*_]"))

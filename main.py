@@ -10,9 +10,9 @@ Runs the design and includes the version, recursion limit, and time limit.
 import Design
 import sys
 
-version = '1.6'
+version = '1.7'
 time_limit = 3000
-recursion_limit = 100000
+recursion_limit = 1000000
 imports = [
     'List',
     'Random',

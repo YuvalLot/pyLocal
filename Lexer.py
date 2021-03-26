@@ -32,11 +32,13 @@ reserved = {
     'over': 'OVER',
     'elim': 'ELIM',
     'of': 'OF',
-    'const': 'CONST'
+    'const': 'CONST',
+    'final': 'FINAL'
 }
 
 # tokens
 tokens = [
+    'PYTHON',
     'ARROW',
     'CUT',
     'EXCLAMATION',
@@ -101,6 +103,10 @@ def t_MULTILINECOMMENT(t):
         pass
     return t
 
+def t_PYTHON(t):
+    r'<python>(.|\n)+</python>'
+    return t
+
 # Filename token
 def t_FILENAME(t):
     r'@[a-zA-Z_0-9\-\.\\\/: ]+'
@@ -162,11 +168,10 @@ if __name__ == "__main__":
     l = build()
     l.input("""
     
-    domain X
-   over ?x, ?y
-   of ?x : A(?x)
-   of ?y : A(?y)
-   const B(?x, ?y);
+    <python>
+        def HelloWorld(x):
+            return x == 'HelloWorld'
+    </python>
     
     """)
     ts = []

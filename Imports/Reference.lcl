@@ -25,3 +25,6 @@ set Rcopy
 
 set Flush
     case then hFlush();
+
+set PrintRef
+    case ?ref then GetRef(?ref, ?x) & Print(?x);

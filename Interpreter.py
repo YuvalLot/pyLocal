@@ -283,6 +283,9 @@ class Interpreter:
         domain_is_const = False
         domain_elim = ""
 
+        domain_moved_to_final = False
+        domain_final = ""
+
         # Import Variables
         in_imp = False
         imp_name = ''
@@ -338,7 +341,11 @@ class Interpreter:
 
         for token in tokens:
 
-            if token.type == 'NEWLINE':
+            if token.type == "PYTHON":
+                python_text = token.value[8:-9].strip()
+                exec(python_text, self.pythons)
+
+            elif token.type == 'NEWLINE':
                 line += 1
                 continue
 
@@ -464,6 +471,8 @@ class Interpreter:
                     if domain_elim != "":
                         if not new_domain.insert_elimination(domain_elim, line):
                             return
+                    if domain_moved_to_final:
+                        new_domain.insert_final(domain_final)
 
                     self.domains[new_domain.name] = new_domain
 
@@ -484,6 +493,9 @@ class Interpreter:
                     domain_const = ""
                     domain_is_const = False
                     domain_elim = ""
+
+                    domain_moved_to_final = False
+                    domain_final = ""
 
                 if in_imp:
                     in_imp = False
@@ -1112,6 +1124,12 @@ class Interpreter:
                         domain_moved_to_const = True
                     domain_const = ""
                     domain_elim = ""
+
+                elif token.type == "FINAL":
+                    domain_moved_to_final = True
+
+                elif domain_moved_to_final:
+                    domain_final += token.value
 
                 elif domain_entered_vars and not domain_new_range and not domain_moved_to_const:
                     domain_variables += token.value

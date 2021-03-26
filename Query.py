@@ -11,6 +11,8 @@ import hashlib
 from random import random, randint
 
 
+already_printed = set()
+
 # Query Class
 class Query:
     """
@@ -186,7 +188,17 @@ class Query:
         if depth.count < 0:
             return
 
-        # print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
+        # MyLen(?xs, 81) & sod(%?xs)
+
+        #print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
+
+        if depth.count % 100000 == 0:
+            global already_printed
+            if depth in already_printed:
+                pass
+            else:
+                print(f"Depth of {depth}")
+                already_printed.add(depth)
 
         if self.interpreter.trace_on:
             self.interpreter.message(f"Searching for {self.__str__()}")
@@ -228,6 +240,13 @@ class Query:
                     for sol in Q.search(depth):
                         complete_sol = smartUpdate(sol_with_predicate, sol)
                         yield complete_sol
+                return
+
+            if query_name in self.interpreter.pythons:
+                try:
+                    yield from self.interpreter.pythons[query_name](query_pat)
+                except Exception as e:
+                    self.interpreter.raiseError(f"Python Error: {e}")
                 return
 
             if query_name == "Time":
@@ -326,6 +345,7 @@ class Query:
                 parts = splitWithoutParen(query_pat)
                 if len(parts) != 2 or match_type(parts[0]) != "constant" or parts[0] not in self.interpreter.references:
                     return
+                # print(f"From Ref of {parts[0]} with func {parts[1]}")
                 if self.interpreter.references[parts[0]] == 'nil':
                     self.interpreter.raiseError("Error: attempting to change from an empty reference.")
                     return
@@ -338,14 +358,13 @@ class Query:
                     self.interpreter.raiseError("Error: illegal pattern for from reference.")
                     return
                 toMatch, _, toChange = parts[1].partition(">>")
-                print(toMatch, toChange)
                 t = MatchDictionary.match(self.interpreter, toMatch, ref)
                 if t:
                     toReplace = smart_replace(toChange, t[1])
                     if any(mac in toReplace for mac in self.interpreter.macros):
                         toReplace = self.interpreter.macroSimplified(toReplace, depth, simplify_arrow=True)
                     self.interpreter.memory[self.interpreter.references[parts[0]]] = toReplace
-                    yield t[1]
+                    yield {}
                 return
 
             if query_name == "hDel" and self.interpreter.ref_added:
@@ -892,7 +911,6 @@ class Query:
 
         # filter clause
         if self.type == "~":
-            # not can only come after & and $
             new_depth = Counter(depth.count // 2)
             for _ in self.gateA.search(new_depth):
                 return
@@ -904,7 +922,13 @@ class Query:
 
             if self.gateB.gateA == "-cut-":
                 try:
-                    yield next(self.gateA.search(depth))
+                    gen = self.gateA.search(depth)
+                    x = next(gen)
+                    while x in ["Print", "Request"]:
+                        print(f"Got Exception : {x}")
+                        yield x
+                        x = next(gen)
+                    yield x
                 except StopIteration:
                     pass
                 finally:
@@ -925,28 +949,20 @@ class Query:
                 except AttributeError as e:
                     print(self, self.gateB, self.type)
                     raise e
-                if updated_gate_B.type == "~":
-                    yes = updated_gate_B.gateA.search(depth)
-                    try:
-                        next(yes)
-                    except StopIteration:
 
-                        yield p_solution
+                for solution in updated_gate_B.search(depth):
+                    if solution == "Request":
+                        yield "Request"
+                        continue
+                    if solution == "Print":
+                        yield "Print"
+                        continue
 
-                else:
-                    for solution in updated_gate_B.search(depth):
-                        if solution == "Request":
-                            yield "Request"
-                            continue
-                        if solution == "Print":
-                            yield "Print"
-                            continue
+                    q_solution = p_solution.copy()
+                    # print(f"The Two solutions are {q_solution} and {solution}")
+                    q_solution = smartUpdate(q_solution, solution)
 
-                        q_solution = p_solution.copy()
-                        # print(f"The Two solutions are {q_solution} and {solution}")
-                        q_solution = smartUpdate(q_solution, solution)
-
-                        yield q_solution
+                    yield q_solution
 
         # or clause
         if self.type == '|':
