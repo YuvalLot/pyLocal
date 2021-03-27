@@ -240,6 +240,12 @@ class Interpreter:
         package_case = ''
         package_then = ''
 
+        # Sub
+        in_sub = False
+        sub_rep = ""
+        sub_to = ""
+        subs = {}
+
         opened_pack_param = False
         closed_pack_param = False
         opened_pack_prop = False
@@ -282,6 +288,8 @@ class Interpreter:
         domain_const = ""
         domain_is_const = False
         domain_elim = ""
+        domain_moved_to_when = False
+        domain_when = ""
 
         domain_moved_to_final = False
         domain_final = ""
@@ -318,7 +326,8 @@ class Interpreter:
         ready_for_infix = False
         infix_declared = ""
 
-        sum_of_ins = lambda: int(in_imp) + int(in_ext) + int(in_set) + int(in_use) + int(in_pack) + int(in_declare) + int(in_con) + int(in_macro)
+        sum_of_ins = lambda: \
+                int(in_imp) + int(in_ext) + int(in_set) + int(in_use) + int(in_pack) + int(in_declare) + int(in_con) + int(in_macro) + int(in_domain) + int(in_sub)
         more_than_one = lambda: sum_of_ins() > 1
         at_least_one = lambda: sum_of_ins() > 0
 
@@ -344,6 +353,9 @@ class Interpreter:
             if token.type == "PYTHON":
                 python_text = token.value[8:-9].strip()
                 exec(python_text, self.pythons)
+
+            elif token.type == "SUBS":
+                continue
 
             elif token.type == 'NEWLINE':
                 line += 1
@@ -465,11 +477,11 @@ class Interpreter:
                         self.raiseError(f"Error: Must specify constraints in domain {domain_name}, in line {line}")
                         return
                     if domain_const != "":
-                        if not new_domain.insert_constraint(domain_const, line):
+                        if not new_domain.insert_constraint(domain_const, domain_when, line):
                             print(f"This caused an error, '{domain_const}'")
                             return
                     if domain_elim != "":
-                        if not new_domain.insert_elimination(domain_elim, line):
+                        if not new_domain.insert_elimination(domain_elim, domain_when, line):
                             return
                     if domain_moved_to_final:
                         new_domain.insert_final(domain_final)
@@ -493,6 +505,8 @@ class Interpreter:
                     domain_const = ""
                     domain_is_const = False
                     domain_elim = ""
+                    domain_moved_to_when = False
+                    domain_when = ""
 
                     domain_moved_to_final = False
                     domain_final = ""
@@ -1093,14 +1107,23 @@ class Interpreter:
                         return
                     domain_entered_vars = True
 
+                elif token.type == "WHEN":
+                    if not domain_moved_to_const or (not domain_const and not domain_elim):
+                        self.raiseError(f"Error: Illegal when statement, in line {line}")
+                        return
+                    if domain_moved_to_when:
+                        self.raiseError(f"Error: When inside When in Domain {domain_name}, in line {line}")
+                        return
+                    domain_moved_to_when = True
+
                 elif token.type == "CONST":
                     domain_is_const = True
                     if domain_moved_to_const:
                         if domain_const != "":
-                            if not new_domain.insert_constraint(domain_const, line):
+                            if not new_domain.insert_constraint(domain_const, domain_when, line):
                                 return
                         if domain_elim != "":
-                            if not new_domain.insert_elimination(domain_elim, line):
+                            if not new_domain.insert_elimination(domain_elim, domain_when, line):
                                 return
                     else:
                         if not new_domain.insert_range(domain_var_range, domain_range, line):
@@ -1108,15 +1131,17 @@ class Interpreter:
                         domain_moved_to_const = True
                     domain_const = ""
                     domain_elim = ""
+                    domain_moved_to_when = False
+                    domain_when = ""
 
                 elif token.type == "ELIM":
                     domain_is_const = False
                     if domain_moved_to_const:
                         if domain_const != "":
-                            if not new_domain.insert_constraint(domain_const, line):
+                            if not new_domain.insert_constraint(domain_const, domain_when, line):
                                 return
                         if domain_elim != "":
-                            if not new_domain.insert_elimination(domain_elim, line):
+                            if not new_domain.insert_elimination(domain_elim, domain_when, line):
                                 return
                     else:
                         if not new_domain.insert_range(domain_var_range, domain_range, line):
@@ -1124,6 +1149,8 @@ class Interpreter:
                         domain_moved_to_const = True
                     domain_const = ""
                     domain_elim = ""
+                    domain_moved_to_when = False
+                    domain_when = ""
 
                 elif token.type == "FINAL":
                     domain_moved_to_final = True
@@ -1140,7 +1167,7 @@ class Interpreter:
                         return
                     domain_moved_to_search = True
 
-                elif domain_new_range and not domain_moved_to_const:
+                elif domain_new_range and not domain_moved_to_const and not domain_when:
                     if not domain_moved_to_search:
                         if domain_var_range != "":
                             self.raiseError(f"Error: Single domain variable, in line {line}")
@@ -1149,11 +1176,14 @@ class Interpreter:
                     else:
                         domain_range += token.value
 
-                elif domain_moved_to_const:
+                elif domain_moved_to_const and not domain_moved_to_when:
                     if domain_is_const:
                         domain_const += token.value
                     else:
                         domain_elim += token.value
+
+                elif domain_moved_to_when:
+                    domain_when += token.value
 
                 else:
                     self.raiseError(f"Error: Illegal token '{token.value}', in line {line}")

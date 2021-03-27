@@ -180,6 +180,8 @@ class Console:
         :return: None
         """
         self.interpreter.deleted = True
+        for domain in self.interpreter.domains.values():
+            domain.shut_down()
         self.interpreter.__init__(self.interpreter.time_limit, self.interpreter.imports, self.interpreter.path, update_delete=False)
         self.sendMessage("\nAll Rules Deleted\n")
         self.solutions = None

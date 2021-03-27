@@ -4,7 +4,13 @@ import List;
 
 set Sum
     case [], 0
-    case [?x * ?xs], ?s then Sum(?xs, ?partial) & Add(?x, ?partial, ?s);
+    case [?x * ?xs], ?s then (Sum(?xs, ?partial) & Add(?x, ?partial, ?s)) $
+                             (Add(?x, ?partial, ?s) & Sum(?xs, ?partial));
+
+set Product
+    case [], 1
+    case [?x * ?xs], ?s then (Product(?xs, ?partial) & Mul(?x, ?partial, ?s)) $
+                             (Mul(?x, ?partial, ?s) & Product(?xs, ?partial));
 
 set Max
     case [?x], ?x

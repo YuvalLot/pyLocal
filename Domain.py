@@ -1,8 +1,7 @@
 
 from copy import deepcopy
 from Match import MatchDictionary
-from util import processParen, splitWithoutParen, outString, smart_replace, match_type
-
+from util import processParen, splitWithoutParen, outString, smart_replace, match_type, var_in_query
 
 fixed_search = []
 
@@ -30,6 +29,8 @@ class Domain:
         self.eliminations = {}
         self.ranges = {}
         self.final = ""
+        self.when = {}
+        self.deleted = False
 
     def complete(self):
         """
@@ -55,6 +56,9 @@ class Domain:
             self.interpreter.raiseError(f"Error: Illegal variables of domain {self.name}, in line {line}")
             return False
         return True
+
+    def shut_down(self):
+        self.deleted = True
 
     def insert_range(self, variable, range_search, line):
         """
@@ -84,11 +88,12 @@ class Domain:
         self.range_searches[variable] = range_search
         return True
 
-    def insert_constraint(self, const, line):
+    def insert_constraint(self, const, when, line):
         """
         Inserts a constraint.
 
         :param const: str
+        :param when: str
         :param line: int
         :return: bool
         """
@@ -96,14 +101,16 @@ class Domain:
         if not const:
             self.interpreter.raiseError(f"Error: In Domain {self.name}, constraint {const} illegal, in line {line}")
             return False
-        self.constraints[const] = {var for var in self.variables if outString(const, var)}
+        self.constraints[const] = {var for var in self.variables if var_in_query(const, var)}
+        self.when[const] = when
         return True
 
-    def insert_elimination(self, elim, line):
+    def insert_elimination(self, elim, when, line):
         """
         Inserts a constraint.
 
         :param elim: str
+        :param when: str
         :param line: int
         :return: bool
         """
@@ -111,7 +118,8 @@ class Domain:
         if not elim:
             self.interpreter.raiseError(f"Error: In Domain {self.name}, elimination {elim} illegal, in line {line}")
             return False
-        self.eliminations[elim] = {var for var in self.variables if outString(elim, var)}
+        self.eliminations[elim] = {var for var in self.variables if var_in_query(elim, var)}
+        self.when[elim] = when
         return True
 
     def insert_final(self, final):
@@ -149,6 +157,7 @@ class Domain:
         """
         parts = splitWithoutParen(query_pat)
         if len(parts) != len(self.variables):
+            print(parts, self.variables)
             return
         self.generate_ranges(depth)
 
@@ -204,9 +213,8 @@ class Domain:
         if already is None:
             already = set()
 
-        if self.interpreter.deleted:
+        if self.deleted:
             # print("Weird Error lol")
-            self.interpreter.deleted = False
             return
 
         flag = True
@@ -224,7 +232,7 @@ class Domain:
                 if not self.update_range(depth, ranges, fixed, consts=rel_const, elims=rel_elim, already=already):
                     return
 
-        print(f"With fixed {fixed}, the ranges are {ranges}")
+        # print(f"With fixed {fixed}, the ranges are {ranges}")
         # Print(f"With have a len of {len(fixed)}")
 
         if len(ranges) == 0:
@@ -242,13 +250,17 @@ class Domain:
 
         for option in rng:
 
-            new_ranges = ranges.copy()
+            if self.deleted:
+                # print("Weird Error lol")
+                return
+
+            new_ranges = deepcopy(ranges)
             del new_ranges[var]
-            new_fixed = fixed.copy()
+            new_fixed = deepcopy(fixed)
             new_fixed[var] = option
             new_consts = deepcopy(rel_const)
             new_elim = deepcopy(rel_elim)
-            new_already = already.copy()
+            new_already = deepcopy(already)
 
             if not self.update_range(depth, new_ranges, new_fixed, new_consts, new_elim, new_already):
                 continue
@@ -267,6 +279,11 @@ class Domain:
         :param already: set[str]
         :return: bool
         """
+
+        if self.deleted:
+            # print("Weird Error lol")
+            self.interpreter.deleted = False
+            return
 
         for const in list(consts.keys()):
             possible_sols = {}
@@ -291,6 +308,12 @@ class Domain:
             else:
                 already.add(const)
 
+            try:
+                if self.when[original_const] != "":
+                    next(self.interpreter.mixed_query(smart_replace(self.when[original_const], fixed), 0, depth, True))
+            except StopIteration:
+                continue
+
             if len(possible_sols) == 0:
                 try:
                     next(self.interpreter.mixed_query(const, 0, depth, True))
@@ -311,7 +334,7 @@ class Domain:
                     continue
                 ranges[var] = ranges[var].intersection(possible_sols[var])
                 if len(ranges[var]) == 0:
-                    print(f"Exited due to {original_const}")
+                    # print(f"Exited due to {const}")
                     return False
 
         for elim in list(elims.keys()):
@@ -334,6 +357,12 @@ class Domain:
                 continue
             else:
                 already.add(elim)
+
+            try:
+                if self.when[original_elim] != "":
+                    next(self.interpreter.mixed_query(smart_replace(self.when[original_elim], fixed), 0, depth, True))
+            except StopIteration:
+                continue
 
             if len(impossible_sols) == 0:
                 continue

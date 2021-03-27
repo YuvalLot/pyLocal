@@ -67,7 +67,9 @@ class MatchDictionary:
         if patternB == "...":
             MD = MatchDictionary(interp)
             forward = {"...": f"[{patternA}]"}
-            backward = functools.reduce(lambda a, b: a.update(b) or a, [{d: d for d in get_all_basics(comp) if match_type(d) == "var"} for comp in splitWithoutParen(patternA)], {})
+            backward = functools.reduce(lambda a, b: a.update(b) or a,
+                                        [{d: d for d in get_all_basics(comp) if match_type(d) == "var"} for comp in splitWithoutParen(patternA)],
+                                        {})
             return forward, backward, False
 
         MD = MatchDictionary(interp)
@@ -101,8 +103,12 @@ class MatchDictionary:
         compA = processParen(compA)
         compB = processParen(compB)
 
-        if compB == "_" or compA == "_":
-            return True
+        if compB == "_":
+            compB = f"?@{MatchDictionary.index}"
+            MatchDictionary.index += 1
+        if compA == "_":
+            compA = f"?@{MatchDictionary.index}"
+            MatchDictionary.index += 1
 
         if not compA or not compB:
             return
@@ -332,6 +338,7 @@ class MatchDictionary:
         c_comps = splitWithoutParen(c_head[1:-1], "*")
         if len(c_comps) != 2:
             return False
+
         return self.o_single_push(q_comps[0], c_comps[0]) and self.o_single_push("[" + ",".join(q_comps[1:]) + "]", c_comps[1])
 
     def o_head_with_list(self, q_head, c_list):
@@ -490,8 +497,11 @@ class MatchDictionary:
 
     def i_single_push(self, compA, compB):
 
-        if compA == "_" or compB == "_":
-            return True
+        if compB == "_":
+            compB = f"?@{MatchDictionary.index}"
+            MatchDictionary.index += 1
+        if compA == "_":
+            compA = f"?@{MatchDictionary.index}"
 
         typeA = match_type(compA)
         typeB = match_type(compB)
@@ -723,8 +733,8 @@ if __name__ == "__main__":
         packages_names = ["Addition"]
 
 
-    pA = '1,[?x,?y,?z],a,[?1,?2,?3]'
-    pB = '?prop1,[?prop1*_],?prop2,[?prop2*_]'
+    pA = '["[","1",",","2",",","3","]"]'
+    pB = '[?c*?cs]'
 
     # sat(?a1 ^=:= (?a2 ^* ?a3 ^* ?a4 ^* ?a5 ^* ?a6), 1) & sat(?a2 ^=:= n(?a3 ^+ ?a4 ^+ ?a5 ^+ ?a6), 1)
 

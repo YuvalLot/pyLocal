@@ -10,8 +10,7 @@ from io import UnsupportedOperation
 import hashlib
 from random import random, randint
 
-
-already_printed = set()
+from OnlineRequest import url_opener
 
 # Query Class
 class Query:
@@ -190,15 +189,7 @@ class Query:
 
         # MyLen(?xs, 81) & sod(%?xs)
 
-        #print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
-
-        if depth.count % 100000 == 0:
-            global already_printed
-            if depth in already_printed:
-                pass
-            else:
-                print(f"Depth of {depth}")
-                already_printed.add(depth)
+        # print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
 
         if self.interpreter.trace_on:
             self.interpreter.message(f"Searching for {self.__str__()}")
@@ -238,6 +229,9 @@ class Query:
                     Q = Query.create(self.interpreter, smart_replace(self.__str__(), sol_with_predicate))
                     depth.sub(1)
                     for sol in Q.search(depth):
+                        if type(sol) == str:
+                            yield sol
+                            continue
                         complete_sol = smartUpdate(sol_with_predicate, sol)
                         yield complete_sol
                 return
@@ -264,6 +258,23 @@ class Query:
                 Query.start = time.time()
                 yield {}
                 return
+
+            if query_name == "Require":
+                parts = splitWithoutParen(query_pat)
+                if len(parts) != 2:
+                    return
+                print(parts[0][1:-1])
+                try:
+                    inLcl = url_opener(parts[0][1:-1])
+                    if inLcl is None:
+                        return
+                    m = MatchDictionary.match(self.interpreter, parts[1], inLcl)
+                    if m:
+                        yield m[1]
+                except Exception as e:
+                    print(e)
+                finally:
+                    return
 
             # Break predicate
             if query_name == 'hBreak' and (self.interpreter.list_added or self.interpreter.types_added):
@@ -481,7 +492,7 @@ class Query:
 
             # Math Predicates
             if query_name in ['hAdd', 'hSub', 'hMul', 'hDiv', 'hMod', 'hFloor', 'hCeil', 'hPower', 'hLog',
-                              'hSin', 'hCos', 'hTan', 'hLT'] and self.interpreter.math_added:
+                              'hSin', 'hCos', 'hTan', 'hLT', 'hE'] and self.interpreter.math_added:
                 yield from MathHelper.Reader(query_name, query_pat)
                 return
 

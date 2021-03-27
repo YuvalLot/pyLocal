@@ -118,10 +118,13 @@ def remove_bracket(string):
     :return: str
     """
     count = 0
+    inQ = False
     for i, c in enumerate(string):
-        if c == "[":
+        if c == '"':
+            inQ = not inQ
+        if c == "[" and not inQ:
             count += 1
-        if c == "]":
+        if c == "]" and not inQ:
             count -= 1
         elif count == 0 and len(string) != i+1:
             return string
@@ -227,7 +230,11 @@ def smart_replace(string, replace_dict):
         ">",
         " ",
         "\'",
-        "!"
+        "!",
+        '%',
+        '&',
+        '|',
+        '$'
     ]
     for c in string:
 
@@ -647,6 +654,19 @@ def outString(string, find):
     return False
 
 
+def var_in_query(string, find):
+    return outString(string, find + ",") or \
+           outString(string, find + ")") or \
+           outString(string, find + "(") or \
+           outString(string, find + "]") or \
+           outString(string, find + "&") or \
+           outString(string, find + "$") or \
+           outString(string, find + "|") or \
+           outString(string, find + "}") or \
+           outString(string, find + "{") or \
+           outString(string, find + "*")
+
+
 # Join a list of printable objects
 def joinPrint(l:list):
     """
@@ -862,4 +882,4 @@ class Counter:
 
 
 if __name__ == "__main__":
-    print(processHead("[?x*_]"))
+    print(remove_bracket('["1","]"]'))

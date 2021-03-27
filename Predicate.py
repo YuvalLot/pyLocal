@@ -51,7 +51,7 @@ class Predicate:
         self.count = 0  # Count of cases
         self.interpreter = interpreter  # Interpreter for predicate
         self.id = Predicate.created
-        self.created += 1
+        Predicate.created += 1
 
     # Adds a case
     def addCase(self, to_match, then, insert=False):
