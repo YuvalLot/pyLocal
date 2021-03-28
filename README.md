@@ -218,5 +218,30 @@ One could query "Sentence([the, bat, eats, a, cat], [], ?x)". The result will be
 ```
 denoting the parts of speech included in the sentence.
 
+### Domain Search
+An efficient way to search for SAT (constraint satisfactory problems) is using a domain predictae. It has three parts: Variable declarations, range declaration and constraint declaration. Contraints are either things that we want to be true, using the keyword _const_, or things we do not want, using the keyword _elim_. For example, a 2x2 Soduko solver:
+
+```
+import List;
+
+domain Soduko
+  # Variable declaration
+  over ?a, ?b, ?c, ?d
+       ?e, ?f, ?g, ?h
+       ?i, ?j, ?k, ?l
+  # Range searches using In from List library.
+  of ?a : In(?a, [1,2,3,4])
+  of ?b : In(?b, [1,2,3,4])
+  ...
+  of ?l : In(?l : [1,2,3,4])
+  
+  # constraints
+  elim In(?a, [?b, ?c, ?d])
+  elim In(?b, [?a, ?c, ?d])
+  elim In(?c, [?a, ?b, ?d])
+  ...
+  elim In(?l, [?i, j, ?k]);
+```
+
 ### More Example
 Directory [NewRules](https://github.com/YuvalLot/PyLocal/tree/main/NewRules) Holds some examples of code in the Local.
