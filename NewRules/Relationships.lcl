@@ -34,7 +34,7 @@ set Sibling
 	case (?x, ?y) then
       (
          (Father(?f, ?x) & Father(?f, ?y)) |
-	      (Mother(?m, ?x) & Mother(?m, ?y))
+	 (Mother(?m, ?x) & Mother(?m, ?y))
       ) & ~ SamePerson(?x, ?y);
 
 set Uncle
