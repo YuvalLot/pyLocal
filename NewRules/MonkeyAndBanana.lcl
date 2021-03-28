@@ -1,0 +1,39 @@
+
+(*
+
+A hungry monkey is in a room, and he is near the door.
+The monkey is on the floor.
+Bananas have been hung from the center of the ceiling of the room.
+There is a block (or chair) present in the room near the window.
+The monkey wants the banana, but cannot reach it.
+
+What steps should he take to reach the bananas?
+
+representation:
+   state(monkey_position, monkey_on_box, box_position, monkey_has_banana)
+where
+   monkey_position - atdoor, middle, atwindow
+   monkey_on_box - onbox, onfloor
+   box_position - atdoor, middle, atwindow
+   monkey_has_banana - has, hasnot
+
+*)
+
+import Math;
+
+declare state, drag, walk;
+
+set Move
+   case state(middle,onbox,middle,hasnot), grasp, state(middle,onbox,middle,has)
+   case state(?p,onfloor,?p,?h), climb, state(?p,onbox,?p,?h)
+   case state(?p1,onfloor,?p1,?h), drag(?p1,?p2), state(?p2,onfloor,?p2,?h)
+   case state(?p1,onfloor,?b,?h), walk(?p1,?p2), state(?p2,onfloor,?b,?h);
+
+set Get
+   case ?A, [],         ?A
+   case ?A, [?m * ?ms], ?Z then Move(?A, ?m, ?B) & Get(?B, ?ms, ?Z);
+
+set GetBananas
+   case ?moves then Get(
+      state(atdoor, onfloor, atwindow, hasnot), ?moves, state(?a,?b,?c,has)
+      );

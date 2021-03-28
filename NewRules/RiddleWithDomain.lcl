@@ -1,0 +1,58 @@
+
+
+import List;
+
+set Choice
+   case [?x * ?xs], ?x
+   case [?a * ?xs], ?x then Choice(?xs, ?x);
+
+set not_unique
+   case ?xs then Choice(?xs, ?x) & Removed(?x, ?xs, ?ws) & In(?x, ?ws);
+
+set Child
+   case Carrie
+   case Elisa
+   case Lynne
+   case Robert;
+
+set Room
+   case bathroom
+   case garage
+   case laundry
+   case mud;
+
+set OneOf
+   case [?v * ?as], ?v, [?w * ?bs], ?w
+   case [?a * ?as], ?v, [?b * ?bs], ?w then OneOf(?as, ?v, ?bs, ?w);
+
+domain Riddle
+   over ?c8, ?c9, ?c10, ?c11, ?r8, ?r9, ?r10, ?r11
+
+   of ?c8 : Child(?c8)
+   of ?c9 : Child(?c9)
+   of ?c10 : Child(?c10)
+   of ?c11 : Child(?c11)
+
+   of ?r8 : Room(?r8)
+   of ?r9 : Room(?r9)
+   of ?r10 : Room(?r10)
+   of ?r11 : Room(?r11)
+
+   elim not_unique([?c8, ?c9, ?c10, ?c11])
+   elim not_unique([?r8, ?r9, ?r10, ?r11])
+
+   # Clue 1
+   const OneOf([?c8, ?c9, ?c10, ?c11], Carrie, [?r8, ?r9, ?r10, ?r11], bathroom)
+
+   # Clue 2
+   const (E(?r9, garage) | E(?r9, bathroom))
+
+   # Clue 3
+   const (E(?r8, bathroom) & E(?c10, Robert)) | (E(?r8, bathroom) & E(?c10, Robert))
+
+   # Clue 4
+   const OneOf([?c8, ?c9, ?c10, ?c11], Elisa, [?r8, ?r9, ?r10, ?r11], mud);
+
+set solve
+   case [[8, ?c8, ?r8], [9, ?c9, ?r9], [10, ?c10, ?r10], [11, ?c11, ?r11]] then
+      Riddle(?c8, ?c9, ?c10, ?c11, ?r8, ?r9, ?r10, ?r11);

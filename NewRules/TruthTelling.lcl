@@ -1,0 +1,173 @@
+
+import Types;
+
+(*
+
+Riddles of the form "lies and truths".
+
+0 - lie
+1 - true
+
+sat(expr, value), evaluates an expression to truth or lie.
+
+*)
+
+set E
+   case ?x, ?x;
+
+infix ^+, ^*, ^#, ^=:=, ^=\=, ^=<, ^>=, ^>;
+declare n;
+
+set fl
+   case 0, 1
+   case 1, 0;
+
+set and
+   case 1, 1, 1
+   case 0, 1, 0
+   case 0, 0, 0
+   case 1, 0, 0;
+
+set or
+   case 1, 1, 1
+   case 0, 1, 1
+   case 0, 0, 0
+   case 1, 0, 1;
+
+set xor
+   case 1, 1, 0
+   case 0, 1, 1
+   case 0, 0, 0
+   case 1, 0, 1;
+
+set eq
+   case 0, 0, 1
+   case 1, 1, 1
+   case 0, 1, 0
+   case 1, 0, 0;
+
+set diff
+   case 0, 0, 0
+   case 1, 1, 0
+   case 0, 1, 1
+   case 1, 0, 1;
+
+set bg
+   case 1, 0, 1
+   case 0, 0, 0
+   case 1, 1, 0
+   case 0, 1, 0;
+
+set bge
+   case 1, 0, 1
+   case 0, 0, 1
+   case 1, 1, 1
+   case 0, 1, 0;
+
+set st
+   case 0, 0, 0
+   case 0, 1, 1
+   case 1, 0, 0
+   case 1, 1, 0;
+
+set ste
+   case 0, 0, 1
+   case 0, 1, 1
+   case 1, 0, 0
+   case 1, 1, 1;
+
+set sat
+
+   case 1, 1
+   case 0, 0
+
+   case ?x, ?e then ~Variable(?x) & xsat(?x, ?e);
+
+set xsat
+   case ?x ^+ ?y, ?e then or(?xe, ?ye, ?e) & sat(?x, ?xe) & sat(?y, ?ye)
+
+   case ?x ^* ?y, ?e then and(?xe, ?ye, ?e) & sat(?x, ?xe) & sat(?y, ?ye)
+
+   case n(?x), ?e then fl(?xe, ?e) & sat(?x, ?xe)
+
+   case ?x ^# ?y, ?e then xor(?xe, ?ye, ?e) & sat(?x, ?xe) & sat(?y, ?ye)
+
+   case ?x ^=:= ?y, ?e then eq(?xe, ?ye, ?e) & sat(?x, ?xe) & sat(?y, ?ye)
+
+   case ?x ^=\= ?y, ?e then diff(?xe, ?ye, ?e) & sat(?x, ?xe) & sat(?y, ?ye)
+
+   case ?x ^> ?y, ?e then bg(?xe, ?ye, ?e) & sat(?x, ?xe) & sat(?y, ?ye)
+
+   case ?x ^< ?y, ?e then st(?xe, ?ye, ?e) & sat(?x, ?xe) & sat(?y, ?ye)
+
+   case ?x ^<= ?y, ?e then ste(?xe, ?ye, ?e)& sat(?x, ?xe) & sat(?y, ?ye);
+
+(*
+
+Example 1: You meet two people, A and B.
+A says: "either I am a liar, or B is a truth teller."
+
+*)
+set ex1
+   case ?a, ?b then sat(?a ^=:= (n(?a) ^+ ?b),1);
+
+(*
+
+Example 2: You meet two people, A and B.
+A says: "I am a liar, but B isn't"
+
+*)
+
+set ex2
+   case ?a, ?b then sat(?a ^=:= (n(?a) ^* ?b),1);
+
+(*
+
+Example 3: You meet two people, A and B.
+A says: "at least one of us is a liar"
+
+*)
+
+set ex3
+   case ?a, ?b then sat(?a ^=:= (n(?a) ^+ n(?b)), 1);
+
+(*
+
+Example 4: You meet three people: A, B and C.
+A says: "All of us are liars"
+B says: "Exactly one of us is a truth-teller"
+
+*)
+
+set ex4
+   case ?a, ?b, ?c then
+      sat(
+         (?a ^=:= (n(?a) ^* n(?b) ^* n(?c)))^*
+         (?b ^=:= (?a ^# ?b ^# ?c))
+      , 1);
+
+(*
+
+Example 5:
+
+Answer the following question:
+Which answers are correct?
+1. All of the below
+2. None of the below
+3. All of the above
+4. At least one of the above
+5. None of the above
+6. None of the above
+
+*)
+
+set ex5
+   case [?a1, ?a2, ?a3, ?a4, ?a5, ?a6] then
+      sat(
+         (?a1 ^=:= (?a2 ^* ?a3 ^* ?a4 ^* ?a5 ^* ?a6)) ^*
+         (?a2 ^=:= n(?a3 ^+ ?a4 ^+ ?a5 ^+ ?a6)) ^*
+         (?a3 ^=:= (?a1 ^* ?a2)) ^*
+         (?a4 ^=:= (?a1 ^+ ?a2 ^+ ?a3)) ^*
+         (?a5 ^=:= n(?a1 ^+ ?a2 ^+ ?a3 ^+ ?a4)) ^*
+         (?a6 ^=:= n(?a1 ^+ ?a2 ^+ ?a3 ^+ ?a4 ^+ ?a5))
+         , 1);

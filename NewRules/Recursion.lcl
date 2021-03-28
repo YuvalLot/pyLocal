@@ -1,0 +1,40 @@
+
+(*
+
+Recursion is a super important tool in local, as well as logic programming in general
+
+*)
+
+import Math;
+
+set Factorial
+   case 0, 1
+   case ?n, ?m then Sub(?n, 1, ?n1) & Factorial(?n1, ?k) & Mul(?k, ?n, 1);
+
+(*
+set Fib
+   case 0, 1
+   case 1, 1
+   case ?n, ?f then Sub(?n, 1, ?n1) & Sub(?n, 2, ?n2) & Fib(?n1, ?f1)
+      & Fib(?n2, ?f2) & Add(?f1, ?f2, ?f);
+*)
+
+set Fib
+   case 0, ?f1, ?f2, ?f1
+   case ?n, ?f1, ?f2, ?final then Add(?f1, ?f2, ?f3) & Sub(?n, 1, ?m) & Fib(?m, ?f2, ?f3, ?final)
+   case ?n, ?f then Fib(?n, 0, 1, ?f);
+
+set Max
+   case ?x, ?y, ?x then GT(?x, ?y)
+   case ?x, ?y, ?y then LTE(?x, ?y);
+
+set LargestContigousSum
+
+   case [], 0, _
+   case [?x * ?xs], ?largestSum, ?sumUntilHere then
+      Add(?x, ?sumUntilHere, ?newSum) &
+      Max(?x, ?newSum, ?newSumUntilHere) &
+      LargestContigousSum(?xs, ?possibleLargest, ?newSumUntilHere) &
+      Max(?possibleLargest, ?newSumUntilHere, ?largestSum)
+
+   case ?xs, ?largest then LargestContigousSum(?xs, ?largest, 0);

@@ -1,0 +1,41 @@
+
+(*
+
+Relationships in the biblical family tree.
+
+*)
+
+set SamePerson
+   case ?person, ?person;
+
+set Father
+	case (Abraham, Isaac)
+	case (Isaac, Jacob)
+	case (Isaac, Esau)
+	case (Jacob, Joseph)
+	case (Jacob, Judah)
+   case (Leban, Rachel)
+   case (Leban, Leah);
+
+set Mother
+	case (Sarah, Isaac)
+	case (Rebecca, Jacob)
+	case (Rebecca, Esau)
+	case (Rachel, Joseph)
+   case (Leah, Judah);
+
+set Grandfather
+	case (?x, ?y) then Father(?x, ?z) & Father(?z, ?y);
+
+set Partners
+	case (?x, ?y) then Father(?x, ?z) & Mother(?y, ?z);
+
+set Sibling
+	case (?x, ?y) then
+      (
+         (Father(?f, ?x) & Father(?f, ?y)) |
+	      (Mother(?m, ?x) & Mother(?m, ?y))
+      ) & ~ SamePerson(?x, ?y);
+
+set Uncle
+	case (?x, ?y) then Father(?f, ?y) & Sibling(?x, ?f);

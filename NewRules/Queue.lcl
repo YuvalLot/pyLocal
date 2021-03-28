@@ -1,0 +1,15 @@
+
+import List;
+import Save;
+
+declare q, f, b;
+
+set Queue.Empty
+   case q(f([]), b([]));
+
+set Queue.enq
+   case ?item, q(f(?fs), b(?bs)), q(f(?fs), b([?item * ?bs]));
+
+set Queue.deq
+   case q(f([?f * ?fs]), b(_)), ?f, q(f(?fs), b(_))
+   case q(f([]), b(?bs)), ?f, ?ret then Reverse(?bs, ?fs) & Queue.deq(q(f(?fs), b([])), ?f, ?ret);

@@ -1,0 +1,49 @@
+
+declare mem;
+
+set E
+   case ?x, ?x;
+
+set MoveLeft
+   case mem([?c * ?left], ?reader, ?right),
+        mem(?left, ?c, [?reader * ?right]);
+
+set MoveRight
+   case mem(?left, ?reader, [?c * ?right]),
+        mem([?reader * ?left], ?c, ?right)
+   case mem(?left, ?reader, []),
+        mem([?reader * ?left], DEL, []);
+
+set Move
+   case A, a, a, MoveRight, B
+   case B, a, a, MoveRight, B
+   case B, b, b, MoveRight, B
+   case B, DEL, DEL, MoveLeft, C
+   case C, b, b, MoveRight, D;
+
+set Write
+   case ?t, mem(?left, ?char, ?right), mem(?left, ?t, ?right);
+
+set Reader
+   case mem(?left, ?char, ?right), ?char;
+
+set PerformMove
+   case ?this_state, ?this_mem, ?next_state, ?next_mem
+   then
+        Reader(?this_mem, ?this_letter)
+      & Move(?this_state, ?this_letter, ?write, ?dir, ?next_state)
+      & Write(?write, ?this_mem, ?temp_mem)
+      & ?dir(?temp_mem, ?next_mem);
+
+set Perform
+   case ?this_state, ?this_mem, ?final_state, ?final_mem
+   then
+      (
+       PerformMove(?this_state, ?this_mem, ?next_state, ?next_mem)
+       & Perform(?next_state, ?next_mem, ?final_state, ?final_mem)
+      ) $ (
+        E(?this_mem, ?final_mem) & E(?this_state, ?final_state)
+      );
+
+set FromList
+   case [?x*?xs], mem([P], ?x, ?xs);

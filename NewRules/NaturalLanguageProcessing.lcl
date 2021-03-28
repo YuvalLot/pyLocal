@@ -1,0 +1,29 @@
+
+(*
+
+Natural Language Pocessing. Process a language into its components
+
+Sentence = Noun Phrase followed by Verb Phrase
+Noun Phrase = Determiner (such as the, a, this, my) followed by a Noun
+Verb Phrase = Verb (transitive in this case) followed by a NounPhrase
+
+*)
+
+
+import List;
+
+declare s, np, vp, d, n, v;
+
+connect Sentence : s(?np,?vp) = NounPhrase : ?np + VerbPhrase : ?vp ;
+
+connect NounPhrase : np(?d, ?n) = Det : ?d + Noun : ?n ;
+
+connect VerbPhrase : vp(?v, ?np) = Verb : ?v + NounPhrase : ?np ;
+
+connect Det : d(the) = [the];
+connect Det : d(a) = [a];
+connect Noun : n(cat) = [cat];
+connect Noun : n(bat) = [bat];
+connect Verb : v(eats) = [eats];
+
+# search Sentence([the, bat, eats, a, cat], [], ?x)

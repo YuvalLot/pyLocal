@@ -1,0 +1,66 @@
+
+import List;
+
+set oneLonger
+   case 2, 3
+   case 3, 4
+   case 4, 5;
+
+(*
+
+Arnold's got a number of car rental reservations to handle today.
+Help him out by matching each customer to her car and contract length.
+
+people : Donna, Juana, Kathy, Rose.
+cars : Dodge, Hyundai, Lexus, Nissan.
+contract length : 2 days, 3 days, 4 days, 5 days
+
+rules:
+I   . Nissan rental 1 day longer than Juana's rental
+II  . Whoever rents the Lexus has a 5 day period
+III . Kathy and Donna's rentals are either Hyundai and 5 days, or 5 days and Hyundai
+IIII. Donna's rental is 4 days
+
+rpr:
+[p(name, car, days)...]
+
+*)
+
+declare p;
+
+set people
+   case [p(Donna, ?dc, ?dd), p(Juana, ?jc, ?jd), p(Kathy, ?cc, ?cd), p(Rose, ?rc, ?rd)];
+
+# Donna's rental is 4 days
+set rule4
+   case ?people then In(p(Donna,?dc,4),?people);
+
+# Whoever rents the Lexus has a 5 day period
+set rule2
+   case ?people then In(p(?_, Lexus, 5), ?people);
+
+# Nissan rental 1 day longer than Juana's rental
+set rule1
+   case ?people then In(p(?1, Nissan, ?nd), ?people)
+      & oneLonger(?jd, ?nd) & In(p(Juana, ?2, ?jd), ?people);
+
+# Kathy and Donna are Hyundai and 5 days, or 5 days and Hyundai
+set rule3
+   case ?people then (In(p(Kathy, ?_1, 5), ?people) & In(p(Donna, Hyundai, ?_2), ?people))
+                   | (In(p(Donna, ?_1, 5), ?people) & In(p(Kathy, Hyundai, ?_2), ?people));
+
+set appear
+   case ?people then
+      # each day appears once
+      In(p(?1, ?2, 2), ?people)
+      & In(p(?3, ?4, 3), ?people)
+      & In(p(?5, ?6, 4), ?people)
+      & In(p(?7, ?8, 5), ?people)
+      # each car appears once
+      & In(p(?9, Dodge, ?10), ?people)
+      & In(p(?11, Hyundai, ?12), ?people)
+      & In(p(?13, Lexus, ?14), ?people)
+      & In(p(?15, Nissan, ?16), ?people);
+
+set solve
+   case ?x then people(?x) & rule4(?x) & rule2(?x) & rule3(?x) & rule1(?x) & appear(?x);
