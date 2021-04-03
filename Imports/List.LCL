@@ -54,9 +54,12 @@ set Last
     case [?x], ?x
     case [?x * ?xs], ?y then Last(?xs, ?y);
 
-set Len
+set _Len
 	case [], 0
-	case [?x * ?xs], ?n then Len(?xs, ?m) & Add(?m, 1, ?n);
+	case [?x * ?xs], ?n then _Len(?xs, ?m) & Add(?m, 1, ?n);
+
+set Len
+    case ?x, ?y then _Len(?x, ?y) & -cut-;
 
 set SameLen as recursive
 	case [],[]

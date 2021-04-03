@@ -36,6 +36,9 @@ reserved = {
     'const': 'CONST',
     'final': 'FINAL',
     'when': 'WHEN',
+    'cond': 'COND',
+    'dataset': 'DATASET',
+    'datahash': 'DATAHASH'
 }
 
 # tokens
@@ -72,7 +75,7 @@ tokens = [
  ] + list(reserved.values())
 
 # set regular expressions for tokens
-t_ARROW = r'>>'
+t_ARROW = r'>'
 t_CUT = r'\-cut\-'
 t_EXCLAMATION = r'\!'
 t_COLON = r':'
@@ -179,7 +182,7 @@ class PreProcessor:
             for (org, to) in re.findall(r"(.+)>>(.+)", s):
                 org = org.strip()
                 to = to.strip()
-                temp = f"`{temp_index}`"
+                temp = f"\x10{temp_index}\x10"
                 temp_index += 1
                 subs1[org] = temp
                 subs2[temp] = to

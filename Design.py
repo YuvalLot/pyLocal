@@ -350,7 +350,9 @@ class Console:
                 self.sendMessage('\nFind More Solutions? (Press Enter)\n')
                 self.searching = False
                 return
-        except RecursionError:
+        except Exception as e:
+            if type(e) not in [ValueError, RecursionError]:
+                raise e
             ed, _ = self.viewErrorsAndMessages()
             if not ed:
                 self.sendMessage('Error: Unknown Error')

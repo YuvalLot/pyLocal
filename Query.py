@@ -1,4 +1,8 @@
 import time
+from typing import List, Tuple
+
+from Datatypes import AbstractDataStructure
+from Domain import Domain
 from util import processParen, splitWithoutParen, outString, joinPrint, smart_replace, smartUpdate, \
     formatPrint, remove_whitespace, processHead, Counter, match_type, find_package_end, unfold
 from Match import MatchDictionary
@@ -9,8 +13,8 @@ from Predicate import Predicate
 from io import UnsupportedOperation
 import hashlib
 from random import random, randint
-
 from OnlineRequest import url_opener
+
 
 # Query Class
 class Query:
@@ -32,6 +36,11 @@ class Query:
         self.gateA = None
         self.gateB = None
         self.type = None
+        self.cond: List[Tuple[Query, Query]] = []
+
+        self.object = None
+        self.action = None
+
         self.interpreter = interpreter
 
     # Create a new query
@@ -100,7 +109,27 @@ class Query:
             self.type = "~"
             return
 
-        # Folding
+        # conditional statements
+        if query[:4] == "cond":
+            processed = processParen(query[5:-1])
+            if not processed:
+                self.interpreter.raiseError("Error: illegal cond statement")
+                return
+            self.type = "c"
+
+            parts = splitWithoutParen(processed)
+            for part in parts:
+                trie = splitWithoutParen(part, ">")
+                if len(trie) != 2:
+                    self.interpreter.raiseError(f"Error: {part} illegal cond")
+                    return
+                cond, exe = trie
+                cond = Query.create(self.interpreter, cond)
+                exe = Query.create(self.interpreter, exe)
+                self.cond.append((cond, exe))
+            return
+
+                # Folding
         if outString(query, "%") and len(splitWithoutParen(query, "%")) == 1:
             self.gateA = query
             self.type = "%"
@@ -143,6 +172,11 @@ class Query:
         elif self.type == '~':
             Q.gateA = self.gateA.add_new_info(info)
             Q.type = self.type
+        elif self.type == "c":
+            for key, value in self.cond:
+                key, value = key.add_new_info(info), value.add_new_info(info)
+                Q.cond.append((key, value))
+                Q.type = 'c'
 
         # Chefs(?x) & h2(?x) & h5(?x) & h78(?x) & h3(?x) & h4(?x) & h6(?x) & h10(?x) & h1(?x) & h9(?x)
 
@@ -159,6 +193,9 @@ class Query:
             return f"{self.gateA}"
         if self.type == '&':
             return "(" + str(self.gateA) + ")" + "&" + "(" + str(self.gateB) + ")"
+        if self.type == "c":
+            s = ",".join([f"{cond} > {search}" for cond, search in self.cond])
+            return f"cond({s})"
         if self.type == "|":
             return "(" + str(self.gateA) + ")" + "|" + "(" + str(self.gateB) + ")"
         if self.type == "~":
@@ -179,6 +216,7 @@ class Query:
         Given type "$" yields from first gate, if none yielded, yields from second gate
         Given type "pi", represents Package{param}(variables), searched packages
         Given type "%", unfolds (if possible) and searches normally ('r')
+        Given type "c" conditional.
 
         :param depth: a Counter object, maximum recursion depth
         :return: a generator object that can generate solutions for this query, dict[str, str]
@@ -198,6 +236,9 @@ class Query:
         # regular query
         if self.type == 'r':
 
+            if not self.gateA:
+                return
+
             query_name, _, query_pat = self.gateA.partition("(")
             query_pat = query_pat[:-1]
 
@@ -213,6 +254,21 @@ class Query:
                 if query_pat is None:
                     return
 
+            if ":" in query_name:
+                data_name, _, action = query_name.partition(":")
+                data_struct: AbstractDataStructure = self.interpreter.datasets.get(data_name, None) or self.interpreter.datahashes.get(data_name, None)
+                if data_struct:
+                    if action == "Insert":
+                        yield from data_struct.insert(query_pat)
+                    elif action == "Remove":
+                        yield from data_struct.remove(query_pat)
+                    elif action == "Lookup":
+                        yield from data_struct.lookup(query_pat)
+                    elif action == "Clear":
+                        if query_pat == "":
+                            yield from data_struct.clear()
+                    return
+
             if query_name == "True":
                 yield {}
                 return
@@ -224,6 +280,8 @@ class Query:
 
             # if predicate is variable
             if query_name[0] == "?":
+                if query_pat == "":
+                    return
                 for predicate in self.interpreter.predicates:
                     sol_with_predicate = {query_name: predicate.name}
                     Q = Query.create(self.interpreter, smart_replace(self.__str__(), sol_with_predicate))
@@ -259,7 +317,7 @@ class Query:
                 yield {}
                 return
 
-            if query_name == "Require":
+            if query_name == "Request":
                 parts = splitWithoutParen(query_pat)
                 if len(parts) != 2:
                     return
@@ -292,6 +350,30 @@ class Query:
                 if m:
                     yield m[1]
                 return
+
+            # domain generator
+            if query_name == "Domain-Generator":
+                parts = splitWithoutParen(query_pat)
+                if len(parts) != 4 or any(match_type(part) != "list" for part in parts):
+                    return
+                variables = splitWithoutParen(parts[0][1:-1])
+                if any(match_type(pattern) != "var" for pattern in variables):
+                    return
+                ranges = splitWithoutParen(parts[1][1:-1])
+                if len(ranges) != len(variables):
+                    return
+                constraints = splitWithoutParen(parts[2][1:-1])
+                elims = splitWithoutParen(parts[3][1:-1])
+                D = Domain(self.interpreter, "~~Anon")
+                D.variables = variables
+                D.raw_vars = parts[0][1:-1]
+                for i, var in enumerate(variables):
+                    D.range_searches[var] = ranges[i]
+                for const in constraints:
+                    D.insert_constraint(const, "", -1)
+                for elim in elims:
+                    D.insert_elimination(elim, "", -1)
+                yield from D.search(depth, parts[0][1:-1])
 
             # Init a reference
             if query_name == 'hInit' and self.interpreter.ref_added:
@@ -352,7 +434,7 @@ class Query:
 
             # From reference to another
             if query_name == "FromRef" and self.interpreter.ref_added:
-                # Init(r) & Ref(r, 5) & FromRef(r, ?x >> ADD(1, ?x))
+                # Init(r) & Ref(r, 5) & FromRef(r, ?x > ADD(1, ?x))
                 parts = splitWithoutParen(query_pat)
                 if len(parts) != 2 or match_type(parts[0]) != "constant" or parts[0] not in self.interpreter.references:
                     return
@@ -365,10 +447,10 @@ class Query:
                 if ref is None:
                     self.interpreter.raiseError("Error: Trying to access a deleted value.")
                     return
-                if ">>" not in parts[1]:
+                if ">" not in parts[1]:
                     self.interpreter.raiseError("Error: illegal pattern for from reference.")
                     return
-                toMatch, _, toChange = parts[1].partition(">>")
+                toMatch, _, toChange = parts[1].partition(">")
                 t = MatchDictionary.match(self.interpreter, toMatch, ref)
                 if t:
                     toReplace = smart_replace(toChange, t[1])
@@ -460,6 +542,34 @@ class Query:
                     pass
                 return
 
+            # Integer predicate (checks if integer)
+            if query_name == 'isInteger' and self.interpreter.types_added:
+                parts = splitWithoutParen(query_pat)
+                if len(parts) != 1:
+                    return
+                try:
+                    a = int(parts[0])
+                    yield {}
+                except IndexError:
+                    pass
+                except ValueError:
+                    pass
+                return
+
+            # Floating predicate (checks if float)
+            if query_name == 'isFloating' and self.interpreter.types_added:
+                parts = splitWithoutParen(query_pat)
+                if len(parts) != 1:
+                    return
+                try:
+                    a = float(parts[0])
+                    yield {}
+                except IndexError:
+                    pass
+                except ValueError:
+                    pass
+                return
+
             # Known Predicate (checks if variables in predicate)
             if query_name == 'isKnown' and self.interpreter.types_added:
                 parts = splitWithoutParen(query_pat)
@@ -505,7 +615,7 @@ class Query:
                 printed = joinPrint(printible)
                 self.interpreter.message(printed)
                 yield "Print"
-                if query_pat[-1] == ",":
+                if len(query_pat) != 0 and query_pat[-1] == ",":
                     self.interpreter.newline = True
                 else:
                     self.interpreter.newline = False
@@ -599,8 +709,9 @@ class Query:
                     return
                 file_name = file_name[1:-1]
                 print(file_name)
-                file_type = file_type[1:-1]
-                if file_type not in ["r", "w", "a", "r+"]:
+                if file_type not in ["r", "w", "a", "rp"]:
+                    if file_type == "rp":
+                        file_type = "r+"
                     self.interpreter.raiseError(f"Error: Illegal file type '{file_type}'")
                     return
                 if ":" not in file_name:
@@ -677,8 +788,6 @@ class Query:
                     self.interpreter.raiseError(f"Error: file '{file_name}' not found.")
                     return
 
-                return
-
             # Tracing searching algorithm
 
             if query_name == "Trace" and self.interpreter.inspect_added:
@@ -689,6 +798,13 @@ class Query:
                 else:
                     return
                 yield {}
+                return
+
+            if query_name == "ShowMem" and self.interpreter.inspect_added:
+                self.interpreter.message(f"{self.interpreter.memory}\n{self.interpreter.references}\n")
+                yield "Print"
+                yield {}
+                return
 
             # Listing - list all cases of predicate
             if query_name == "Listing" and self.interpreter.inspect_added:
@@ -809,7 +925,7 @@ class Query:
                         return
 
                 if query_name == "AssertCE":
-                    to_match, _, then = body.partition(">>")
+                    to_match, _, then = body.partition(">")
                     to_match, then = processParen(to_match), processParen(then)
                     if not to_match or not then:
                         return
@@ -817,7 +933,7 @@ class Query:
                     yield {}
                     return
                 if query_name == "AssertC":
-                    to_match, _, then = body.partition(">>")
+                    to_match, _, then = body.partition(">")
                     to_match, then = processParen(to_match), processParen(then)
                     if not to_match or not then:
                         return
@@ -842,7 +958,7 @@ class Query:
                     else:
                         return
                 if query_name == 'DeleteC':
-                    to_match, _, then = body.partition(">>")
+                    to_match, _, then = body.partition(">")
                     to_match, then = processParen(to_match), processParen(then)
                     if to_match in predicate_changed.cases:
                         index = predicate_changed.cases.index(to_match)
@@ -922,6 +1038,8 @@ class Query:
 
         # filter clause
         if self.type == "~":
+            if not self.gateA:
+                return
             new_depth = Counter(depth.count // 2)
             for _ in self.gateA.search(new_depth):
                 return
@@ -930,6 +1048,9 @@ class Query:
 
         # and clause
         if self.type == "&":
+
+            if not self.gateA or not self.gateB:
+                return
 
             if self.gateB.gateA == "-cut-":
                 try:
@@ -977,11 +1098,18 @@ class Query:
 
         # or clause
         if self.type == '|':
+
+            if not self.gateA or not self.gateB:
+                return
+
             yield from self.gateA.search(depth)
             yield from self.gateB.search(depth)
 
         # Lazy Or
         if self.type == "$":
+            if not self.gateA or not self.gateB:
+                return
+
             first_solutions = self.gateA.search(depth)
             found_in_first = False
             for sol in first_solutions:
@@ -992,6 +1120,9 @@ class Query:
 
         # Package with input
         if self.type == 'pi':
+
+            if not self.gateA:
+                return
 
             X = find_package_end(self.gateA)
             if not X:
@@ -1040,6 +1171,10 @@ class Query:
 
         # Folding
         if self.type == '%':
+
+            if not self.gateA:
+                return
+
             query_name, query_pat = self.gateA.split("(")
             query_pat = query_pat[:-1]
 
@@ -1049,3 +1184,23 @@ class Query:
             new_query = Query.create(self.interpreter, f"{query_name}({query_pat})")
             yield from new_query.search(depth)
             return
+
+        # conditional statements
+        if self.type == 'c':
+            for key, value in self.cond:
+                if not key or not value:
+                    continue
+                try:
+                    search = key.search(depth)
+                    p_solution = next(search)
+                    while type(p_solution) is str:
+                        yield p_solution
+                        p_solution = next(search)
+                    for sol in value.add_new_info(p_solution).search(depth):
+                        if type(sol) is str:
+                            yield sol
+                            continue
+                        yield smartUpdate(p_solution, sol)
+                    return
+                except StopIteration:
+                    continue

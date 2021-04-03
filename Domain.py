@@ -232,7 +232,7 @@ class Domain:
                 if not self.update_range(depth, ranges, fixed, consts=rel_const, elims=rel_elim, already=already):
                     return
 
-        # print(f"With fixed {fixed}, the ranges are {ranges}")
+        print(f"With fixed {fixed}, the ranges are {ranges}")
         # Print(f"With have a len of {len(fixed)}")
 
         if len(ranges) == 0:

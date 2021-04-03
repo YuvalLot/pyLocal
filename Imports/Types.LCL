@@ -2,6 +2,12 @@
 set Atom
     case ?x then hBreak(?x, ?_) & ~Predicate(?x) & ~Package(?x) & ~Title(?x);
 
+set Integer
+    case ?x then isInteger(?x);
+
+set Floating
+    case ?x then isFloating(?x);
+
 set Title
     case ?x then isTitle(?x);
 

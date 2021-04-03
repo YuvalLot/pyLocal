@@ -3,7 +3,7 @@ build/*
 venv/*
 Atom-Editor-Style/*
 .idea/*
-Testing/ManualTest.py
+LuaSupport/*
 
 /Setup.py
 

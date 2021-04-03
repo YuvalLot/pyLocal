@@ -6,6 +6,9 @@ import List;
 
 declare Branch;
 
+set EmptyTree
+    case Leaf;
+
 set BinaryTree
 	case Leaf
 	case Branch(?x, ?y, ?z) then BinaryTree(?y) & BinaryTree(?z);
@@ -49,7 +52,7 @@ set Inord
 	case ?t, ?xs then (Known(?t) & xInord(?t, [], ?xs)) $ BalIn(?xs, ?t);
 
 set Postord
-	case ?t, ?xs then (Known(?t) & xPostord(?t, [], ?xs)) $ BanPost(?xs, ?t);
+	case ?t, ?xs then (Known(?t) & xPostord(?t, [], ?xs)) $ BalPost(?xs, ?t);
 
 set BalPre as recursive
 	case [], Leaf

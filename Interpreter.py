@@ -6,6 +6,8 @@ Includes three classes: Predicate, Query and Interpreter, with the Interpreter c
 This file is the main solving engine that fuels the back chaining algorithm in Local
 
 """
+from typing import Dict
+
 from Domain import Domain
 from util import processParen, splitWithoutParen, smart_replace, \
     Counter, processConnectClause, processSolutionDict, match_type
@@ -17,6 +19,7 @@ import re
 from Predicate import Predicate
 from Package import Package
 from Query import Query
+from Datatypes import Dataset, Datahash, AbstractDataStructure
 
 
 # Interpreter class
@@ -53,7 +56,7 @@ class Interpreter:
         self.messageLoad = []
 
     # Empty Interpreter
-    def __init__(self, time_limit, imports, path=None, update_delete = True):
+    def __init__(self, time_limit, imports, path=None, update_delete=True):
         """
         Initiate an empty interpreter. Interpreter read lines of codes and builds database. It also navigates between the different components
         of problem solving.
@@ -110,6 +113,11 @@ class Interpreter:
         self.memory = []
         self.references = {}
 
+        self.datasets: Dict[str, AbstractDataStructure] = {}
+        self.datahashes: Dict[str, AbstractDataStructure] = {}
+
+        self.objects = {}
+
         self.macros = {}  # Macro dictionary between name->(pattern, query, success, failure)
 
         self.pythons = {}
@@ -117,7 +125,6 @@ class Interpreter:
         self.received_input = False  # Requesting input from console
 
         self.filepath = None  # for imports and such
-
 
     def setFilePath(self, path):
         """
@@ -130,7 +137,7 @@ class Interpreter:
 
     # For building connect predicates
     @staticmethod
-    def buildThen(string:str):
+    def buildThen(string: str):
 
         string = processParen(string)
         if not string:
@@ -154,7 +161,7 @@ class Interpreter:
                 partial_then = Interpreter.buildThen(clause)
                 if not partial_then:
                     return False
-                then += "("+partial_then+")"
+                then += "(" + partial_then + ")"
                 then += "|"
             return then[:-1]
 
@@ -179,7 +186,8 @@ class Interpreter:
 
         d_con, d_reg = {}, {}
         for i, part in enumerate(parts):
-            if re.fullmatch(r'[a-zA-Z_0-9\-\.]+', part) or re.fullmatch(r'[a-zA-Z_0-9\-\.]+:\?[a-zA-Z_0-9\-\.]+', part) or re.fullmatch(r'\[(.| |,|\n)*]', part):
+            if re.fullmatch(r'[a-zA-Z_0-9\-\.]+', part) or re.fullmatch(r'[a-zA-Z_0-9\-\.]+:.+', part) or re.fullmatch(r'\[(.| |,|\n)*]',
+                                                                                                                                        part):
                 d_con[i] = part
             elif re.fullmatch(r'\{.+\}', part):
                 d_reg[i] = part[1:-1]
@@ -201,7 +209,7 @@ class Interpreter:
 
             index = 1
             for con_ind in con_keys[1:-1]:
-                d_con[con_ind] = processConnectClause(d_con[con_ind], f"?temp{index}", f"?temp{index+1}")
+                d_con[con_ind] = processConnectClause(d_con[con_ind], f"?temp{index}", f"?temp{index + 1}")
                 index += 1
 
             last_key = con_keys[-1]
@@ -215,7 +223,6 @@ class Interpreter:
                 processed_parts.append(d_reg[i])
 
         return "&".join(processed_parts)
-
 
     # Reading tokens and creating predicates (main compiling)
     def read(self, tokens):
@@ -242,9 +249,6 @@ class Interpreter:
 
         # Sub
         in_sub = False
-        sub_rep = ""
-        sub_to = ""
-        subs = {}
 
         opened_pack_param = False
         closed_pack_param = False
@@ -321,13 +325,24 @@ class Interpreter:
         ready_for_dec = False
         title_declared = ""
 
+        # Dataset variables
+        in_dataset = False
+        ready_for_dataset = False
+        dataset_declared = ""
+
+        # Datahash variables
+        in_datahash = False
+        ready_for_datahash = False
+        datahash_declared = False
+
         # Infix variables
         in_infix = False
         ready_for_infix = False
         infix_declared = ""
 
         sum_of_ins = lambda: \
-                int(in_imp) + int(in_ext) + int(in_set) + int(in_use) + int(in_pack) + int(in_declare) + int(in_con) + int(in_macro) + int(in_domain) + int(in_sub)
+            int(in_imp) + int(in_ext) + int(in_set) + int(in_use) + int(in_pack) + int(in_declare) + int(in_con) + int(in_macro) + int(in_domain) + \
+            int(in_dataset) + int(in_datahash)
         more_than_one = lambda: sum_of_ins() > 1
         at_least_one = lambda: sum_of_ins() > 0
 
@@ -362,7 +377,7 @@ class Interpreter:
                 continue
 
             elif token.type == 'BUNDLE':
-                pass
+                continue
 
             elif token.type == "EXCLAMATION" and not in_macro:
                 in_macro = True
@@ -437,6 +452,26 @@ class Interpreter:
                     return
                 in_declare = True
                 ready_for_dec = True
+                if more_than_one():
+                    self.raiseError(f'Error: Attempting to declare titles inside another statement, in line {line}')
+                    return
+
+            elif token.type == 'DATASET':
+                if in_dataset:
+                    self.raiseError(f'Error: can not declare inside another declaration, in line {line}')
+                    return
+                in_dataset = True
+                ready_for_dataset = True
+                if more_than_one():
+                    self.raiseError(f'Error: Attempting to declare titles inside another statement, in line {line}')
+                    return
+
+            elif token.type == 'DATAHASH':
+                if in_datahash:
+                    self.raiseError(f'Error: can not declare inside another declaration, in line {line}')
+                    return
+                in_datahash = True
+                ready_for_datahash = True
                 if more_than_one():
                     self.raiseError(f'Error: Attempting to declare titles inside another statement, in line {line}')
                     return
@@ -638,6 +673,36 @@ class Interpreter:
                     in_declare = False
                     ready_for_dec = False
                     title_declared = ''
+
+                if in_dataset:
+                    if ready_for_dataset:
+                        self.raiseError(f"Error: Dataset declaration missing, in line {line}")
+                        return
+                    if dataset_declared == "":
+                        self.raiseError(f"Error: Dataset declaration missing, in line {line}")
+                        return
+                    if dataset_declared in self.datahashes or dataset_declared in self.datasets:
+                        self.raiseError(f"Error: Name '{dataset_declared}' already in use, in line {line}")
+                        return
+                    self.datasets[dataset_declared] = (Dataset(dataset_declared))
+                    in_dataset = False
+                    ready_for_dataset = False
+                    dataset_declared = ''
+
+                if in_datahash:
+                    if ready_for_datahash:
+                        self.raiseError(f"Error: Datahash declaration missing, in line {line}")
+                        return
+                    if datahash_declared == "":
+                        self.raiseError(f"Error: Datahash declaration missing, in line {line}")
+                        return
+                    if datahash_declared in self.datahashes or datahash_declared in self.datasets:
+                        self.raiseError(f"Error: Name '{datahash_declared}' already in use, in line {line}")
+                        return
+                    self.datahashes[datahash_declared] = (Datahash(self, dataset_declared))
+                    in_datahash = False
+                    ready_for_datahash = False
+                    datahash_declared = ''
 
                 if in_infix:
                     if ready_for_infix:
@@ -1015,6 +1080,46 @@ class Interpreter:
                     title_declared = token.value
                     ready_for_dec = False
 
+            elif in_dataset:
+                if token.type == 'COMMA':
+                    if ready_for_dataset:
+                        self.raiseError(f"Error: Dataset declarations separated by one comma only, in line {line}")
+                        return
+                    if dataset_declared in self.datahashes or dataset_declared in self.datasets:
+                        self.raiseError(f"Error: Name '{dataset_declared}' already in use, in line {line}")
+                        return
+                    self.datasets[dataset_declared] = Dataset(dataset_declared)
+                    ready_for_dataset = True
+                else:
+                    if token.type != "NAME":
+                        self.raiseError(f"Error: Illegal name for dataset: '{token.value}', in line {line}")
+                        return
+                    if not ready_for_dataset:
+                        self.raiseError(f"Error: Dataset declarations separated by a comma, in line {line}")
+                        return
+                    dataset_declared = token.value
+                    ready_for_dataset = False
+
+            elif in_datahash:
+                if token.type == 'COMMA':
+                    if ready_for_datahash:
+                        self.raiseError(f"Error: Datahash declarations separated by one comma only, in line {line}")
+                        return
+                    if datahash_declared in self.datahashes or datahash_declared in self.datasets:
+                        self.raiseError(f"Error: Name '{datahash_declared}' already in use, in line {line}")
+                        return
+                    self.datahashes[datahash_declared] = Datahash(self, datahash_declared)
+                    ready_for_datahash = True
+                else:
+                    if token.type != "NAME":
+                        self.raiseError(f"Error: Illegal name for datahash: '{token.value}', in line {line}")
+                        return
+                    if not ready_for_datahash:
+                        self.raiseError(f"Error: Datahash declarations separated by a comma, in line {line}")
+                        return
+                    datahash_declared = token.value
+                    ready_for_datahash = False
+
             elif in_infix:
                 if token.type == 'COMMA':
                     if ready_for_infix:
@@ -1204,7 +1309,8 @@ class Interpreter:
         # print(self.errorLoad)
         # self.showPredicates()
         # self.showPackages()
-        # self.showDeclarations()
+        # self.showDeclarations()\
+        # print(self.datasets, self.datahashes)
 
     # Prints predicates
     def showPredicates(self):
@@ -1265,10 +1371,10 @@ class Interpreter:
         final = []
         for comp in splitWithoutParen(pat):
             t = match_type(comp)
-            if ">>" in comp:
+            if ">" in comp:
                 if simplify_arrow:
-                    a, _, b = comp.partition(">>")
-                    final.append(f"{self.macroSimplified(a, depth)}>>{self.macroSimplified(b, depth)}")
+                    a, _, b = comp.partition(">")
+                    final.append(f"{self.macroSimplified(a, depth)}>{self.macroSimplified(b, depth)}")
                 else:
                     final.append(comp)
             elif t == "var" or t == "constant":
@@ -1292,13 +1398,18 @@ class Interpreter:
                     if m:
                         search_for = smart_replace(macro_query, m[0])
                         try:
-                            solution = next(self.mixed_query(search_for, 0, depth, unP=True))
+                            sol_gen = self.mixed_query(search_for, 0, depth, unP=True)
+                            solution = next(sol_gen)
+                            while type(solution) == str:
+                                solution = next(sol_gen)
+                            this_macro_success = smart_replace(macro_success, m[0])
                             final.append(
-                                smart_replace(smart_replace(macro_success, m[0]), solution)
+                                self.macroSimplified(smart_replace(this_macro_success, solution), depth)
                             )
                         except StopIteration:
+                            this_macro_failure = smart_replace(macro_failure, m[0])
                             final.append(
-                                smart_replace(macro_failure, m[0])
+                                self.macroSimplified(this_macro_failure, depth)
                             )
                     else:
                         return None

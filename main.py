@@ -10,7 +10,7 @@ Runs the design and includes the version, recursion limit, and time limit.
 import Design
 import sys
 
-version = '1.7'
+version = '1.8'
 time_limit = 3000
 recursion_limit = 1000000
 imports = [
@@ -19,9 +19,7 @@ imports = [
     'Math',
     'Types',
     'Predicates',
-    'Dictionary',
     'Save',
-    'Sets',
     'Sequences',
     'NumberList',
     'Strings',
@@ -31,6 +29,7 @@ imports = [
     'Dynamic',
     'Filestream',
     'Reference',
+    'Zebra',
     ]
 
 if __name__ == "__main__":

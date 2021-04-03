@@ -167,13 +167,15 @@ def get_all_basics(_list, splitter=","):
     if _list == "":
         return []
 
-    if match_type(_list) == 'title':
+    t = match_type(_list)
+
+    if t == 'title':
         t_name, _, t_pat = _list.partition("(")
         t_pat = t_pat[:-1]
         if t_pat == "":
             return []
 
-    if match_type(_list) == 'pack':
+    if t == 'pack':
         package_name, _, package_param = _list.partition("{")
         package_param = package_param[:-1]
         return get_all_basics("["+package_param+"]")
@@ -234,7 +236,8 @@ def smart_replace(string, replace_dict):
         '%',
         '&',
         '|',
-        '$'
+        '$',
+        ":"
     ]
     for c in string:
 
