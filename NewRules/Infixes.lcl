@@ -1,0 +1,27 @@
+
+(*
+
+Infixes - ways to create titles with infix notation.
+
+*)
+
+import Math;
+
+infix ^+, ^-, ^*, ^/;
+
+set Eval
+   case (?a ^+ ?b), ?c then Eval(?a, ?ea) & Eval(?b, ?eb)
+ 			           & Add(?ea, ?eb, ?c)
+   case (?a ^- ?b), ?c then Eval(?a, ?ea) & Eval(?b, ?eb)
+ 			           & Sub(?ea, ?eb, ?c)
+   case (?a ^* ?b), ?c then Eval(?a, ?ea) & Eval(?b, ?eb)
+ 			           & Mul(?ea, ?eb, ?c)
+   case (?a ^/ ?b), ?c then Eval(?a, ?ea) & Eval(?b, ?eb)
+ 			           & Div(?ea, ?eb, ?c)
+   case ?x, ?x then E(1,1);
+
+infix ^append
+
+set EvalApp
+	case [] ^append ?x, ?x
+	case [?x*?y] ^append ?z, [?x*?t] then EvalApp(?y ^append ?z, ?t);

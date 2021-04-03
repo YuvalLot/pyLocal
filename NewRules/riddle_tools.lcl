@@ -1,0 +1,32 @@
+
+<python>
+
+def repeat(components):
+   parts = components[1:-1].split(",")
+   fixed = set()
+   indp = []
+   for part in parts:
+      if part[0] == '?':
+         indp.append(part)
+      else:
+         fixed.add(part)
+   for value in fixed:
+      yield {var: value for var in indp}
+   return
+
+</python>
+
+set ToTheLeft
+   case ?prop1, ?prop2, [?prop1 * ?rest1], [?c * ?list2] then In(?prop2, ?list2)
+   case ?prop1, ?prop2, [?a * ?rest1], [?b * ?rest2] then ToTheLeft(?prop1, ?prop2, ?rest1, ?rest2);
+
+set ExactlyLeft
+   case ?prop1, ?prop2, [?prop1 * ?rest1], [?a * [?prop2 * ?b]]
+   case ?prop1, ?prop2, [?a * ?list1], [?b * ?list2] then ExactlyLeft(?prop1, ?prop2, ?list1, ?list2);
+
+set OneOf
+   case ?prop1, ?prop2, [?prop1 * ?a], [?prop2 * ?b]
+   case ?prop1, ?prop2, [?a * ?list1], [?b * ?list2] then OneOf(?prop1, ?prop2, ?list1, ?list2);
+
+set NextTo
+   case ?a, ?b, ?c, ?d then ExactlyLeft(?a, ?b, ?c, ?d) | ExactlyLeft(?b, ?a, ?d, ?c);

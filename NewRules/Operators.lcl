@@ -1,0 +1,76 @@
+
+
+(*
+
+The goal - given a list of numbers, find a way to use basic opertaions (add, sub, div, mul) to create an equality.
+
+For example, given [2,3,5,7,11], there are many ways, such as:
+
+2 - 3 + 5 + 7 = 11
+2 = (3 * 5 + 7) / 11
+...
+
+*)
+
+import Math;
+import Strings;
+
+declare add, sub, div, mul, num;
+
+set xsplit
+   case [?x * ?xs], [?x], ?xs
+   case [?x * ?xs], [?x * ?ys], ?zs then xsplit(?xs, ?ys, ?zs);
+
+set split
+   case ?l, ?l1, ?l2 then xsplit(?l, ?l1, ?l2) & ~E(?l2, []);
+
+set equation
+   case ?l, ?lt, ?rt then
+      split(?l, ?ll, ?rl) &
+      term(?ll, ?lt) &
+      term(?rl, ?rt) &
+      Eval(?lt, ?e1) & Eval(?rt, ?e2) & E(?e1, ?e2);
+
+set Eval
+   case (add(?x,?y),?e) then Eval(?x,?e1) & Eval(?y,?e2) & Add(?e1,?e2,?e)
+   case (sub(?x,?y),?e) then Eval(?x,?e1) & Eval(?y,?e2) & Sub(?e1,?e2,?e)
+   case (mul(?x,?y),?e) then Eval(?x,?e1) & Eval(?y,?e2) & Mul(?e1,?e2,?e)
+   case (div(?x,?y),?e) then Eval(?x,?e1) & Eval(?y,?e2) & Div(?e1,?e2,?e)
+   case num(?x), ?x;
+
+set term
+   case [?x], num(?x)
+   case ?l, ?t then
+      split(?l, ?ll, ?rl) &
+      term(?ll, ?lt) &
+      term(?rl, ?rt) &
+      binterm(?lt, ?rt, ?t);
+
+set binterm
+   case ?a, ?b, add(?a,?b)
+   case ?a, ?b, sub(?a,?b)
+   case ?a, ?b, mul(?a,?b)
+   case ?a, ?b, div(?a,?b);
+
+set repr
+   case num(?x), ?s then E(?s, "?x")
+   case add(?x, ?y), ?s then
+      repr(?x, ?s1) &
+      repr(?y, ?s2) &
+      Format("(% + %)", [?s1, ?s2], ?s)
+   case sub(?x, ?y), ?s then
+      repr(?x, ?s1) &
+      repr(?y, ?s2) &
+      Format("(% - %)", [?s1, ?s2], ?s)
+   case mul(?x, ?y), ?s then
+      repr(?x, ?s1) &
+      repr(?y, ?s2) &
+      Format("(% * %)", [?s1, ?s2], ?s)
+   case div(?x, ?y), ?s then
+      repr(?x, ?s1) &
+      repr(?y, ?s2) &
+      Format("(% / %)", [?s1, ?s2], ?s);
+
+set do
+   case ?l,?s then equation(?l, ?ll, ?rl) & repr(?ll, ?s1) & repr(?rl, ?s2)
+      & Format("% = %", [?s1, ?s2], ?s);

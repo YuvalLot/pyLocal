@@ -1,0 +1,49 @@
+
+import List;
+
+(*
+
+story:
+Once upon a time a farmer went to a market and purchased a wolf, a goat, and a cabbage.
+On his way home, the farmer came to the bank of a river and rented a boat.
+But crossing the river by boat, the farmer could carry only himself and a single one of his purchases: the wolf, the goat, or the cabbage.
+If left unattended together, the wolf would eat the goat, or the goat would eat the cabbage.
+
+problem:
+How does he move all three animals?
+
+rpr:
+A configuration will be represented by a 4-list of placements: (w)est or (e)ast.
+The goal is to move from [w,w,w,w] -> [e,e,e,e]
+
+*)
+
+# Switch sides
+set change
+   case w, e
+   case e, w;
+
+# possible moves
+set move
+   case [?x,?x,?g,?c], wolf, [?y,?y,?g,?c] then change(?x,?y)
+   case [?x,?w,?x,?c], goat, [?y,?w,?y,?c] then change(?x,?y)
+   case [?x,?w,?g,?x], cabbage, [?y,?w,?g,?y] then change(?x,?y)
+   case [?x,?w,?g,?c], man, [?y,?w,?g,?c] then change(?x,?y);
+
+# in a (a,b,c), a=b or a=c
+set oneEq
+   case ?x, ?x, ?y
+   case ?x, ?y, ?x;
+
+# A safe configuration is one where the man is with the wolf or goat, and, with the goat or cabbage
+# this is becuase, if the first conditional isn't met, the wolf is alone with the goat
+# and if the second isn't met, the wolf is goat is alone with the cabbage
+set safe
+   case [?m,?w,?g,?c] then oneEq(?m, ?g, ?w) & oneEq(?m, ?g, ?c);
+
+set solution
+   case [e,e,e,e], []
+   case ?config, [?fm * ?om] then move(?config, ?fm, ?next) & safe(?next) & solution(?next, ?om);
+
+set solve
+   case ?moves then Len(?moves, 7) & solution([w,w,w,w], ?moves);

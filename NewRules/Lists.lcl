@@ -1,0 +1,49 @@
+
+(*
+
+List action!
+
+
+
+*)
+
+import Math;
+
+set Lists
+   case [1,2,3]
+   case [apple, blueberry, cranberry, orange]
+   case [1 * [2, 3]]
+   case [apple * [blueberry, cranberry, orange]]
+   case [apple * [blueberry * [cranberry * [orange * []]]]];
+
+set Hd
+   case [?x * ?xs], ?x;
+
+set Tl
+   case [?x * ?xs], ?xs;
+
+set Last
+   case [?x], ?x
+   case [?x * ?xs], ?y then Last(?xs, ?y);
+
+set SameLen
+   case [], []
+   case [?x * ?xs], [?y * ?ys] then SameLen(?xs, ?ys);
+
+set Len
+   case [], 0
+   case [?x * ?xs], ?n then Len(?xs, ?m) & Add(?m, 1, ?n);
+
+set Join
+   case [], ?x, ?x
+   case [?x * ?xs], ?ys, [?x * ?zs] then Join(?xs, ?ys, ?zs);
+
+set Reverse
+   (*
+   Naive way: (grossly inefficient)
+   case [], []
+   case [?x * ?xs], ?ys then Reverse(?xs, ?rxs) & Join(?rxs, [?x], ?ys);
+   *)
+   case [], ?xs, ?xs
+   case [?x * ?xs], ?ys, ?zs then Reverse(?xs, [?x * ?ys], ?zs)
+   case ?xs, ?ys then Reverse(?xs, [], ?ys);

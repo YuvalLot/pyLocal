@@ -1,0 +1,81 @@
+
+(*
+
+You must furnish an apartment. You must choose a table, a rug and a sofa.
+
+Your table options:
+   1. Black and made of marble
+   2. White and made of marble
+   3. Brown and made of wood
+   4. White and made of wood
+
+Your rug options:
+   1. Black and made of wool
+   2. White and made of cotton
+   3. Brown and made of wool
+   4. Red and made of cotton
+
+Your sofa options:
+   1. Black and made of cotton
+   2. Red and made of plastic
+   3. Green and made of cotton
+   4. Black and made of wool
+
+You must follow the following rules:
+   1. The table and the rug must have the same color
+   2. The rug and the sofa must be made of the same material
+   3. If the table is made of marble, the sofa cannot be made of cotton
+   4. If the table is made of wood, the sofa cannot be made of wool.
+
+How can you furnish the apartment? How many ways are there to do so?
+
+*)
+
+set Table
+   case 1, black, marble
+   case 2, white, marble
+   case 3, brown, wood
+   case 4, white, wood;
+
+set Rug
+   case 1, black, wool
+   case 2, white, cotton
+   case 3, brown, wool
+   case 4, red, cotton;
+
+set Sofa
+   case 1, black, cotton
+   case 2, red, plastic
+   case 3, green, cotton
+   case 4, black, wool;
+
+set Models
+   case 1
+   case 2
+   case 3
+   case 4;
+
+domain furnish
+   over ?t, ?r, ?s # variable declaration: table model, rug model, sofa model
+
+   # options for each variable
+   of ?t : Models(?t)
+   of ?r : Models(?r)
+   of ?s : Models(?s)
+
+   # Contraint 1
+   const Table(?t, ?c, _) & Rug(?r, ?c, _)
+   # Constraint 2
+   const Rug(?r, _, ?m) & Sofa(?s, _, ?m)
+   # Constraint 3
+   elim Table(?t, _, marble) & Sofa(?s, _, cotton)
+   # Constraint 4
+   elim Table(?t, _, wood) & Sofa(?s, _, wool);
+
+set solve
+   case [?table, ?rug, ?sofa] then
+      furnish(?table, ?rug, ?sofa) &
+      Table(?table, ?tcolor, ?tmat) &
+      Rug(?rug, ?rcolor, ?rmat) &
+      Sofa(?sofa, ?scolor, ?smat) &
+      Print("How about a ?tcolor table made of ?tmat, ?rcolor rug made of ?rmat and ?scolor sofa made of ?smat ?");

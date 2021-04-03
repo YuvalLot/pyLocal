@@ -1,0 +1,15 @@
+
+(*
+
+Socrates is a Human
+all Humans are Mortal
+... Socrates is Mortal
+
+*)
+
+set Human
+   case Socrates;
+
+set Mortal
+   case ?x then Human(?x);
+   # Human(?x) -> Mortal(?x)

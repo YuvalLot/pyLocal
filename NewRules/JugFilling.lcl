@@ -1,0 +1,54 @@
+
+(*
+
+You have two jugs, one with capcity of 5 liters, one with capicity of 3 liters.
+You have a tap and a sink to fill and empty the jugs. In addition you can
+pour from one jug to another - either to empty one jug to another, or to fill from
+one jug to another until it fills.
+
+Your goal - have 4 liters in the 5 liter jug.
+
+*)
+
+import Math;
+import List;
+
+declare state, jug5, jug3;
+
+set start
+   case state(jug5(0), jug3(0));
+
+set goal
+   case state(jug5(4), jug3(_));
+
+set move
+
+   case state(jug5(?x), jug3(?y)), "pour all of jug 5 inro jug 3", state(jug5(0), jug3(?t)) then Add(?x, ?y, ?t) & LTE(?t, 3)
+   case state(jug5(?x), jug3(?y)), "pour from jug 3 to jug 5 until it fills", state(jug5(5), jug3(?w)) then
+      Add(?x, ?y, ?p) & Sub(?p, 5, ?w) & GTE(?w, 0)
+   case state(jug5(?x), jug3(?y)), "pour all of jug 3 into jug 5", state(jug5(?t), jug3(0)) then Add(?x, ?y, ?t) & LTE(?t, 5)
+   case state(jug5(?x), jug3(?y)), "pour from jug 5 to jug 3 until it fills", state(jug5(?w), jug3(3)) then
+      Add(?x, ?y, ?p) & Sub(?p, 3, ?w) & GTE(?w, 0)
+   case state(jug5(_), jug3(?x)), "fill jug 5", state(jug5(5), jug3(?x))
+   case state(jug5(?x), jug3(_)), "fill jug 3", state(jug5(?x), jug3(3))
+   case state(jug5(?x), jug3(_)), "empty jug 3", state(jug5(?x), jug3(0))
+   case state(jug5(_), jug3(?x)), "empty jug 5", state(jug5(0), jug3(?x));
+
+set search
+   case ?x, ?x, ?visited, []
+   case ?x, ?y, ?visited, [?action * ?actions] then
+      move(?x, ?action, ?z) &
+      ~In(?z, ?visited) &
+      search(?z, ?y, [?z * ?visited], ?actions)
+
+   case ?x, ?y, ?a then search(?x, ?y, [?x], ?a);
+
+set REPR
+   case []
+   case [?x * ?xs] then Print(?x) & REPR(?xs);
+
+set nice
+   case ?x then start(?s) & search(?s, ?x, ?a) & REPR(?a);
+
+set on-start
+   case then goal(?goal) & nice(?goal);

@@ -1,0 +1,28 @@
+
+(*
+
+Tree sort works by inserting new all values of a list into a binary tree.
+Insertion works in this way:
+   if the inserted value is less than the label, it will be inserted into the letf sub-tree
+   if the inserted value is more than the label, it will be inserted into the right sub-tree
+
+in the end, the sorted list is acheived by reading the tree in order
+
+*)
+
+import BinaryTrees;
+import Math;
+
+set Insert
+	case ?x, Leaf, Branch(?x, Leaf, Leaf)
+	case ?x, Branch(?v, ?t1, ?t2), Branch(?v, ?rt1, ?rt2) then
+       (GT(?x, ?v) & E(?t1, ?rt1) & Insert(?x, ?t2, ?rt2))
+	  $ (E(?t2, ?rt2) & Insert(?x, ?t1, ?rt1));
+
+set TreeSort
+	case [], ?t, ?ys then Inord(?t, ?ys)
+	case [?x * ?xs], ?t, ?ys then Insert(?x, ?t, ?it)
+                               & TreeSort(?xs, ?it, ?ys)
+
+
+	case (?xs, ?ys) then TreeSort(?xs, Leaf, ?ys);
