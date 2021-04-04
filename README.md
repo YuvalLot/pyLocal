@@ -92,6 +92,16 @@ The _lazy or_ gate will search the first query. If a solution is found, it will 
 The _filter_ gate will __not__ generate solutions. It uses failure as negation, a common practice in logical programming. If the query fails, it will keep searching. It almost always follows a _and_ gate, The first __generating__ solutions and the second __filtering__ them. The use of _filter_ as a Not Gate is not unheard of, but it is only useful when all pieces of information are used.
 ##### The use of multiple logical gates
 The precedence order of logical gates as follows: And, Or, Lazy Or, Filter. The use of parantheses can combat the order. 
+#### cond
+The keyword _cond_ can be used to write consitional statements. Seperated by commas, a conditional and a goal. Conditional statements will yield one of the caluses, meaning they act as "else if" blocks (after the first conditional). A final True(), which is always true, can be used as an else block. For example:
+```
+cond(
+  A(?x) > DoSomething1, # if A do something 1
+  B(?x) > DoSomething2, # else if B, do something 2
+  C(?x) > DoSomething3, # else if C, do something 3
+  True() > DoSomething4 # else, do something 3.
+)
+```
 
 ### Lists
 Lists are collections of data. Similar to functional programming languages, lists allow a two writing styles: _full_ and _cons_. a Full list will specify every single element in the list. Such as:
@@ -105,7 +115,7 @@ A Consed List will only show the "head" and the "tail" of a list, seperated by a
 * [?x * ?xs]
 
 ### Titles
-Titles are ways to communicate a special meaning behind a set of objects. For example, the title 3tuple might represent a tuple of size three. It is customary (but not necessary) to declare titles as follows:
+Titles (also known as functors) are ways to communicate a special meaning behind a set of objects. For example, the title 3tuple might represent a tuple of size three. It is customary (but not necessary) to declare titles as follows:
 ```
 declare 3tuple, 4tuple, Branch, T;
 ```
@@ -123,16 +133,25 @@ import @local_file; # local rules
 ```
 
 ### Packages
-Packages are "preidctae generators". They act as second-order and above logical components. For example:
+Packages are "predicate generators". They act as second-order and above logical components. For example:
 ```
 import Math;
 package divisibleBy{?c}
   case ?x then Mod(?x, ?c, 0);
 ```
-Essentially, _?c_ represents a package variabke, where _?x_ represents a predicate variable. The use of packages:
+Essentially, _?c_ represents a package variable, where _?x_ represents a predicate variable. The use of packages:
 ```
 divisibleBy{3}(6) # True
 divisibleBy{10}(15) # False (no solution)
+```
+Or by using them as variables. For example
+```
+Package Identity{?x}
+    case ?x;
+package Apply
+    case ?predictae, ?variable then ?predicate(?variable);
+
+# In console: Apply(I{4}, ?x) will have a solution of 4;
 ```
 
 ### Sequences
@@ -219,7 +238,7 @@ One could query "Sentence([the, bat, eats, a, cat], [], ?x)". The result will be
 denoting the parts of speech included in the sentence.
 
 ### Domain Search
-An efficient way to search for SAT (constraint satisfactory problems) is using a domain predictae. It has three parts: Variable declarations, range declaration and constraint declaration. Contraints are either things that we want to be true, using the keyword _const_, or things we do not want, using the keyword _elim_. For example, a 2x2 Soduko solver:
+An efficient way to search for SAT (constraint satisfactory problems) is using a domain predictae. It has three parts: Variable declarations, range declaration and constraint declaration. Contraints are either things that we want to be true, using the keyword _const_, or things we do not want, using the keyword _elim_. For example, a 4x4 Soduko solver:
 
 ```
 import List;

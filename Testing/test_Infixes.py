@@ -12,7 +12,8 @@ class InfixesTest(Testing.TestingSuper.Testing):
         
         infix ^+, ^-, ^*, ^/, ^app;
         
-        set Eval as recursive
+        set Eval
+           case ?x, ?x then Add(?x,0,?x)
            case (?a ^+ ?b), ?c then Eval(?a, ?ea) & Eval(?b, ?eb)
                                & Add(?ea, ?eb, ?c)
            case (?a ^- ?b), ?c then Eval(?a, ?ea) & Eval(?b, ?eb)
@@ -20,8 +21,7 @@ class InfixesTest(Testing.TestingSuper.Testing):
            case (?a ^* ?b), ?c then Eval(?a, ?ea) & Eval(?b, ?eb)
                                & Mul(?ea, ?eb, ?c) 
            case (?a ^/ ?b), ?c then Eval(?a, ?ea) & Eval(?b, ?eb)
-                               & Div(?ea, ?eb, ?c) 
-           case ?x, ?x then True();
+                               & Div(?ea, ?eb, ?c) ;
 
         set AppendEval
             case ([] ^app ?xs), ?xs

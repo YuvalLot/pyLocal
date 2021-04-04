@@ -7,9 +7,9 @@ def Reader(queryName:str, queryComp:str):
     """
     basic math operations in LCL form.
 
-    :param queryName:
-    :param queryComp:
-    :return:
+    :param queryName: str
+    :param queryComp: str
+    :return: generator
     """
 
     if queryName == "hE":
@@ -35,7 +35,7 @@ def Reader(queryName:str, queryComp:str):
             num1 = float(comps[0])
             num2 = float(comps[1])
             num3 = num1 + num2
-            if int(num3) == num3:
+            if num3.is_integer():
                 num3 = int(num3)
             if comps[2][0] == "?":
                 yield {comps[2]:str(num3)}
@@ -56,7 +56,7 @@ def Reader(queryName:str, queryComp:str):
             num1 = float(comps[0])
             num2 = float(comps[1])
             num3 = num1 - num2
-            if int(num3) == num3:
+            if num3.is_integer():
                 num3 = int(num3)
             if comps[2][0] == "?":
                 yield {comps[2]: str(num3)}
@@ -77,7 +77,7 @@ def Reader(queryName:str, queryComp:str):
             num1 = float(comps[0])
             num2 = float(comps[1])
             num3 = num1 * num2
-            if int(num3) == num3:
+            if num3.is_integer():
                 num3 = int(num3)
             if comps[2][0] == "?":
                 yield {comps[2]: str(num3)}
@@ -100,7 +100,7 @@ def Reader(queryName:str, queryComp:str):
             if num2 == 0:
                 return
             num3 = num1 / num2
-            if int(num3) == num3:
+            if num3.is_integer():
                 num3 = int(num3)
             if comps[2][0] == "?":
                 yield {comps[2]: str(num3)}
@@ -123,7 +123,7 @@ def Reader(queryName:str, queryComp:str):
             if num2 == 0:
                 return
             num3 = num1 % num2
-            if int(num3) == num3:
+            if num3.is_integer():
                 num3 = int(num3)
             if comps[2][0] == "?":
                 yield {comps[2]: str(num3)}
@@ -180,7 +180,7 @@ def Reader(queryName:str, queryComp:str):
             num1 = float(comps[0])
             num2 = float(comps[1])
             num3 = num1 ** num2
-            if int(num3) == num3:
+            if num3.is_integer():
                 num3 = int(num3)
             if comps[2][0] == "?":
                 yield {comps[2]: str(num3)}
@@ -200,7 +200,7 @@ def Reader(queryName:str, queryComp:str):
         try:
             num1 = float(comps[0])
             num2 = log10(num1)
-            if int(num2) == num2:
+            if num2.is_integer():
                 num2 = int(num2)
             if comps[1][0] == "?":
                 yield {comps[1]: str(num2)}
@@ -220,7 +220,7 @@ def Reader(queryName:str, queryComp:str):
             try:
                 num1 = float(comps[0])
                 num2 = cos(num1)
-                if int(num2) == num2:
+                if num2.is_integer():
                     num2 = int(num2)
                 yield {comps[1]: str(num2)}
             except ValueError:
@@ -233,7 +233,7 @@ def Reader(queryName:str, queryComp:str):
                     num2 = acos(num1)
                 except ValueError:
                     return
-                if int(num2) == num2:
+                if num2.is_integer():
                     num2 = int(num2)
                 yield {comps[0]: str(num2)}
             except ValueError:
@@ -256,7 +256,7 @@ def Reader(queryName:str, queryComp:str):
             try:
                 num1 = float(comps[0])
                 num2 = sin(num1)
-                if int(num2) == num2:
+                if num2.is_integer():
                     num2 = int(num2)
                 yield {comps[1]: str(num2)}
             except ValueError:
@@ -269,7 +269,7 @@ def Reader(queryName:str, queryComp:str):
                     num2 = asin(num1)
                 except ValueError:
                     return
-                if int(num2) == num2:
+                if num2.is_integer():
                     num2 = int(num2)
                 yield {comps[0]: str(num2)}
             except ValueError:
@@ -295,7 +295,7 @@ def Reader(queryName:str, queryComp:str):
                     num2 = tan(num1)
                 except ValueError:
                     return
-                if int(num2) == num2:
+                if num2.is_integer():
                     num2 = int(num2)
                 yield {comps[1]: str(num2)}
             except ValueError:
@@ -305,7 +305,7 @@ def Reader(queryName:str, queryComp:str):
             try:
                 num1 = float(comps[1])
                 num2 = atan(num1)
-                if int(num2) == num2:
+                if num2.is_integer():
                     num2 = int(num2)
                 yield {comps[0]: str(num2)}
             except ValueError:

@@ -33,7 +33,9 @@ class Testing(unittest.TestCase):
 
             logging.debug(f"{compiler.errorLoad}")
 
-            assert compiler.errorLoad == []
+            if not compiler.errorLoad == []:
+                print(compiler.errorLoad)
+                assert False
 
         return compiler
 

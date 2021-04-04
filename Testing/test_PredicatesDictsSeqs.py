@@ -9,7 +9,6 @@ class PredsDictsSeqs(Testing.TestingSuper.Testing):
         data = """
         
         import Predicates;
-        import Dictionary;
         import Sequences;
         import List;
         import Save;
@@ -85,26 +84,6 @@ class PredsDictsSeqs(Testing.TestingSuper.Testing):
 
     def test_Preds_Feed(self):
         self.singleSolved("Feed(Join,[[1,2,3],[4,5,6],[7,8,9]],[],?r)", r="[7,8,9,4,5,6,1,2,3]")
-
-    def test_Dicts_AddDict(self):
-        self.multipleSolved("AddDict(Libi,nLastNames,2,?new)&?new(nLastNames,?x)&Save(?new)", not_care=("?new",), x=("2",))
-        self.multipleSolved('Load(?new)&AddDict(?new,Studies,"To Fart",?newer)&?newer(Studies,?x)&?newer(nLastNames,?y)', not_care=("?new","?newer"), x=('"To Fart"',), y=("2",))
-
-    def test_Dicts_ToDictionary(self):
-        self.solved("ListsToDictionary([Name,Location,Job,Favorite_TV],[Yuval,Israel,Student,Friends],?d)&Save(?d)")
-        self.multipleSolved("Load(?d)&?d(Job,?x)", not_care=("?d",), x=("Student",))
-
-        self.solved("PairsToDictionary([[Name,Yuval],[Location,Israel],[Job,Student],[Fav_TV,Friends]],?d)&Save(?d)")
-        self.multipleSolved("View(?d)&?d(Job,?x)", not_care=("?d",), x=("Student",))
-        self.multipleSolved("View(?d)&Keys(?d,?keys)", not_care=("?d",), keys=("[Name,Location,Job,Fav_TV]",))
-        self.multipleSolved("View(?d)&Values(?d,?keys)", not_care=("?d",), keys=("[Yuval,Israel,Student,Friends]",))
-        self.multipleSolved("View(?d)&DictToPairs(?d,?keys)", not_care=("?d",), keys=("[[Name,Yuval],[Location,Israel],[Job,Student],[Fav_TV,Friends]]",))
-
-    def test_Dicts_Unite(self):
-        self.solved("PairsToDictionary([[Name,Yuval],[Location,Israel],[Job,Student],[Fav_TV,Friends]],?d1)" +
-                    "&ListsToDictionary([Last,Friend,Name],[Lot,Libi,Amir],?d2)&Unite(?d1,?d2,?d)&Save(?d)")
-        self.multipleSolved("View(?d)&?d(?x,Lot)", not_care=("?d",), x=("Last",))
-        self.multipleSolved("View(?d)&?d(Name,?x)", not_care=("?d",), x=("Yuval",))
 
     def test_Seq_General(self):
         self.solved("Save(From{10})")

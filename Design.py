@@ -293,8 +293,7 @@ class Console:
                 else:
                     self.viewErrorsAndMessages()
                 self.searching = False
-                if "on-start" in self.interpreter.predicates_names:
-                    print("hello")
+                if "on-start" in self.interpreter.predicates:
                     self.queryReceived(given="on-start()")
             self.searching = True
             threading.Thread(target=reader).start()

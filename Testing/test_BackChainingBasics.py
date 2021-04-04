@@ -62,6 +62,14 @@ class BackChainingTest(Testing.TestingSuper.Testing):
             case 2
             case ?x then Father(?x, ?y);
         
+        set Cut1
+            case 1
+            case 2
+            case 3;
+        
+        set Cut
+            case ?x then Cut1(?x) & -cut-;
+        
         """
 
         cls.compiler = cls.upload(data)
@@ -113,3 +121,6 @@ class BackChainingTest(Testing.TestingSuper.Testing):
         self.isTrue("A(1)")
         self.isTrue("A(2)")
         self.isTrue("A(Abraham)")
+
+    def test_Cut(self):
+        self.singleSolved("Cut(?x)", x="1")

@@ -36,11 +36,11 @@ class DynamicTest(Testing):
 
         self.isTrue("Create(Edge)&Create(Connected)")
         self.isTrue("AssertFE(Edge(1,2))&AssertFE(Edge(1,3))&AssertFE(Edge(1,4))&AssertFE(Edge(3,2))")
-        self.isTrue("AssertC(Connected(?x,?y)>>(Edge(?x,?y)|Edge(?y,?x)))")
+        self.isTrue("AssertC(Connected(?x,?y)>(Edge(?x,?y)|Edge(?y,?x)))")
 
         self.solved("Connected(?x,?y)")
 
         self.isTrue("Create(Even)")
-        self.isTrue("AssertC(Even(?x)>>(Mod(?x,2,0)))")
+        self.isTrue("AssertC(Even(?x)>(Mod(?x,2,0)))")
 
         self.singleSolved("Filter(Even,[1,5,8,4],?x)", x="[8,4]")

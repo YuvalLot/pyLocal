@@ -129,7 +129,7 @@ class Query:
                 self.cond.append((cond, exe))
             return
 
-                # Folding
+        # Folding
         if outString(query, "%") and len(splitWithoutParen(query, "%")) == 1:
             self.gateA = query
             self.type = "%"
@@ -227,7 +227,7 @@ class Query:
 
         # MyLen(?xs, 81) & sod(%?xs)
 
-        # print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
+        print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
 
         if self.interpreter.trace_on:
             self.interpreter.message(f"Searching for {self.__str__()}")
@@ -282,7 +282,7 @@ class Query:
             if query_name[0] == "?":
                 if query_pat == "":
                     return
-                for predicate in self.interpreter.predicates:
+                for predicate in self.interpreter.predicates.values():
                     sol_with_predicate = {query_name: predicate.name}
                     Q = Query.create(self.interpreter, smart_replace(self.__str__(), sol_with_predicate))
                     depth.sub(1)
@@ -584,7 +584,7 @@ class Query:
                 parts = splitWithoutParen(query_pat)
                 if len(parts) != 1:
                     return
-                if parts[0] in self.interpreter.predicates_names or \
+                if parts[0] in self.interpreter.predicates or \
                         (parts[0] in ['Add', 'Sub', 'Mul', 'Div', 'Mod', 'Floor', 'Ceil', 'Power', 'Log', 'Sin', 'Cos', 'Tan',
                                       'LT'] and self.interpreter.math_added) \
                         or parts[0] == 'Print' or parts[0] == 'Predicate' or (parts[0] == 'Break' and self.interpreter.list_added):
@@ -596,7 +596,7 @@ class Query:
                 parts = splitWithoutParen(query_pat)
                 if len(parts) != 1:
                     return
-                if parts[0] in self.interpreter.packages_names:
+                if parts[0] in self.interpreter.packages:
                     yield {}
                 return
 
@@ -811,16 +811,16 @@ class Query:
                 p_name = query_pat
 
                 if p_name == "ALL":
-                    for predicate in self.interpreter.predicates:
+                    for predicate in self.interpreter.predicates.values():
                         self.interpreter.message(predicate.__str__())
                     yield 'Print'
                     yield {}
                     return
 
-                if p_name not in self.interpreter.predicates_names:
+                if p_name not in self.interpreter.predicates:
                     return
                 else:
-                    predicate_match = self.interpreter.predicates[self.interpreter.predicates_names.index(p_name)]
+                    predicate_match = self.interpreter.predicates[p_name]
                     self.interpreter.message(predicate_match.__str__())
                     yield "Print"
                     yield {}
@@ -828,20 +828,9 @@ class Query:
 
                 return
 
-            if self.interpreter.dynamic_added and query_name in ["AssertF",
-                                                                 "AssertFE",
-                                                                 "AssertN",
-                                                                 "AssertNE",
-                                                                 "AssertC",
-                                                                 "AssertCE",
-                                                                 "DeleteF",
-                                                                 "DeleteN",
-                                                                 "DeleteC",
-                                                                 "Create",
-                                                                 "SwitchRecursive",
-                                                                 "SwitchRandom",
-                                                                 'Clear',
-                                                                 'Delete']:
+            if self.interpreter.dynamic_added and query_name in \
+                    {"AssertF", "AssertFE", "AssertN", "AssertNE", "AssertC", "AssertCE", "DeleteF",
+                     "DeleteN", "DeleteC", "Create", "SwitchRecursive", "SwitchRandom", 'Clear', 'Delete'}:
 
                 parts = splitWithoutParen(query_pat)
                 if len(parts) != 1:
@@ -850,45 +839,35 @@ class Query:
                 if query_name == "Create":
                     if re.fullmatch(r'[a-zA-Z_0-9\-\.]+', query_pat) and query_pat not in Lexer.reserved:
                         new_pred = Predicate(self.interpreter, query_pat, False, False)
-                        self.interpreter.predicates.append(new_pred)
-                        self.interpreter.predicates_names.append(query_pat)
+                        self.interpreter.predicates[new_pred.name] = new_pred
                         yield {}
-                        return
-                    else:
-                        return
+                    return
                 if query_name == "SwitchRecursive":
-                    if query_pat in self.interpreter.predicates_names:
-                        pred = self.interpreter.predicates[self.interpreter.predicates_names.index(query_pat)]
+                    if query_pat in self.interpreter.predicates:
+                        pred = self.interpreter.predicates[query_pat]
                         pred.recursive = not pred.recursive
                         yield {}
-                        return
-                    else:
-                        return
+                    return
                 if query_name == "SwitchRandom":
-                    if query_pat in self.interpreter.predicates_names:
-                        pred = self.interpreter.predicates[self.interpreter.predicates_names.index(query_pat)]
+                    if query_pat in self.interpreter.predicates:
+                        pred = self.interpreter.predicates[query_pat]
                         pred.random = not pred.random
                         yield {}
-                        return
-                    else:
-                        return
+                    return
                 if query_name == 'Delete':
-                    if query_pat in self.interpreter.predicates_names:
-                        predicate_changed = self.interpreter.predicates[self.interpreter.predicates_names.index(query_pat)]
-                        self.interpreter.predicates.remove(predicate_changed)
-                        self.interpreter.predicates_names.remove(predicate_changed.name)
+                    if query_pat in self.interpreter.predicates:
+                        del self.interpreter.predicates[query_pat]
                         yield {}
-                        return
                     return
 
                 predicate_changed, _, body = query_pat.partition("(")
                 body = "(" + body
                 body = remove_whitespace(body)
 
-                if predicate_changed not in self.interpreter.predicates_names:
+                if predicate_changed not in self.interpreter.predicates:
                     return
 
-                predicate_changed = self.interpreter.predicates[self.interpreter.predicates_names.index(predicate_changed)]
+                predicate_changed = self.interpreter.predicates[predicate_changed]
 
                 if query_name == "AssertFE":
                     basic = processParen(body)
@@ -985,18 +964,18 @@ class Query:
 
             if query_name in self.interpreter.domains:
                 domain = self.interpreter.domains[query_name]
-                print(f"Found the domain {domain.name}")
+                # print(f"Found the domain {domain.name}")
                 for sol in domain.search(depth, query_pat):
-                    print(f"Found a solution {sol}")
+                    # print(f"Found a solution {sol}")
                     m = MatchDictionary.match(self.interpreter, query_pat, smart_replace(domain.raw_vars, sol))
                     if m:
                         yield m[1]
                 return
 
-            if query_name not in self.interpreter.predicates_names:
+            if query_name not in self.interpreter.predicates:
                 return
 
-            predicate_match = self.interpreter.predicates[self.interpreter.predicates_names.index(query_name)]
+            predicate_match = self.interpreter.predicates[query_name]
 
             if predicate_match:
                 for search, backward, forwards in predicate_match.match(query_pat):
@@ -1005,8 +984,9 @@ class Query:
                         solution_as_dict = {}
                         for key in backward.keys():
                             if backward[key] in solution.keys():
-                                solution_as_dict[key] = solution[backward[key]]
-                            elif match_type(backward[key]) in ['list', 'head', 'title']:
+                                to_replace = solution[backward[key]]
+                                solution_as_dict[key] = to_replace
+                            elif match_type(backward[key]) in ['list', 'head', 'title', 'pair']:
                                 solution_as_dict[key] = processHead(smart_replace(backward[key], solution))
                             else:
                                 solution_as_dict[key] = backward[key]
@@ -1023,13 +1003,13 @@ class Query:
                             if solution == "Print":
                                 yield "Print"
                                 continue
-                            # print(f"Solution to original problem: {solution}")
+                            # print(f"Solution to original problem: {solution}, with {backward}")
                             solution_as_dict = {}
                             for key in backward.keys():
 
                                 if backward[key] in solution.keys():
                                     solution_as_dict[key] = solution[backward[key]]
-                                elif match_type(backward[key]) in ['list', 'head', 'title', 'pack']:
+                                elif match_type(backward[key]) in ['list', 'head', 'title', 'pack', 'pair']:
                                     solution_as_dict[key] = processHead(smart_replace(backward[key], solution))
                                 else:
                                     solution_as_dict[key] = backward[key]
@@ -1093,7 +1073,6 @@ class Query:
                     q_solution = p_solution.copy()
                     # print(f"The Two solutions are {q_solution} and {solution}")
                     q_solution = smartUpdate(q_solution, solution)
-
                     yield q_solution
 
         # or clause
@@ -1133,7 +1112,7 @@ class Query:
             p_name, _, p_inp = p_pred.partition("{")
             p_inp = p_inp[:-1]
 
-            if p_name not in self.interpreter.packages_names:
+            if p_name not in self.interpreter.packages:
                 return
 
             flag_p = False
@@ -1152,7 +1131,7 @@ class Query:
             if flag_q:
                 q_inp = self.interpreter.macroSimplified(q_inp, depth)
 
-            package_match = self.interpreter.packages[self.interpreter.packages_names.index(p_name)]
+            package_match = self.interpreter.packages[p_name]
 
             for search, backward in package_match.match(p_inp, q_inp):
                 if search == 1:

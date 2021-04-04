@@ -77,11 +77,9 @@ class Interpreter:
         else:
             self.path = path
 
-        self.predicates = []  # List of predicates
-        self.predicates_names = []  # List of Predicate names
+        self.predicates = {}  # Predicates dictionary
 
-        self.packages = []  # List of packages (type packages)
-        self.packages_names = []  # List of names of packages
+        self.packages = {}  # Packages Dictionary
 
         self.errorLoad = []  # List of Errors Raised
         self.messageLoad = []  # List of messages
@@ -368,9 +366,10 @@ class Interpreter:
             if token.type == "PYTHON":
                 python_text = token.value[8:-9].strip()
                 exec(python_text, self.pythons)
+                line += token.value.count("\n")
 
             elif token.type == "SUBS":
-                continue
+                line += token.value.count("\n")
 
             elif token.type == 'NEWLINE':
                 line += 1
@@ -458,22 +457,22 @@ class Interpreter:
 
             elif token.type == 'DATASET':
                 if in_dataset:
-                    self.raiseError(f'Error: can not declare inside another declaration, in line {line}')
+                    self.raiseError(f'Error: can not declare dataset inside another declaration, in line {line}')
                     return
                 in_dataset = True
                 ready_for_dataset = True
                 if more_than_one():
-                    self.raiseError(f'Error: Attempting to declare titles inside another statement, in line {line}')
+                    self.raiseError(f'Error: Attempting to declare dataset inside another statement, in line {line}')
                     return
 
             elif token.type == 'DATAHASH':
                 if in_datahash:
-                    self.raiseError(f'Error: can not declare inside another declaration, in line {line}')
+                    self.raiseError(f'Error: can not declare datahash inside another declaration, in line {line}')
                     return
                 in_datahash = True
                 ready_for_datahash = True
                 if more_than_one():
-                    self.raiseError(f'Error: Attempting to declare titles inside another statement, in line {line}')
+                    self.raiseError(f'Error: Attempting to declare datahash inside another statement, in line {line}')
                     return
 
             elif token.type == "INFIX":
@@ -567,13 +566,7 @@ class Interpreter:
                         else:
                             new_package.addCase(package_case, package_then)
 
-                    if new_package.name in self.packages_names:
-                        index = self.packages_names.index(new_package.name)
-                        self.packages_names = self.packages_names[:index] + self.packages_names[index + 1:]
-                        self.packages = self.packages[:index] + self.packages[index + 1:]
-
-                    self.packages.append(new_package)
-                    self.packages_names.append(new_package.name)
+                    self.packages[new_package.name] = new_package
 
                     # Package Reset
                     in_pack = False
@@ -612,13 +605,7 @@ class Interpreter:
                         else:
                             new_predicate.addCase(predicate_case, predicate_then)
 
-                    if new_predicate.name in self.predicates_names:
-                        index = self.predicates_names.index(new_predicate.name)
-                        self.predicates_names = self.predicates_names[:index] + self.predicates_names[index + 1:]
-                        self.predicates = self.predicates[:index] + self.predicates[index + 1:]
-
-                    self.predicates.append(new_predicate)
-                    self.predicates_names.append(new_predicate.name)
+                    self.predicates[new_predicate.name] = new_predicate
 
                     # Setting Predicate Reset
                     in_set = False
@@ -735,12 +722,11 @@ class Interpreter:
                     if not con_then:
                         self.raiseError(f"Error: Illegal connect pattern of Predicate '{con_name}', in line {line}")
                         return
-                    if con_name not in self.predicates_names:
+                    if con_name not in self.predicates:
                         con_pred = Predicate(self, con_name, False, False)
-                        self.predicates.append(con_pred)
-                        self.predicates_names.append(con_pred.name)
+                        self.predicates[con_name] = con_pred
                     else:
-                        con_pred = self.predicates[self.predicates_names.index(con_name)]
+                        con_pred = self.predicates[con_name]
 
                     con_pred.addCase(con_case, con_then)
 
@@ -876,10 +862,10 @@ class Interpreter:
                     if token.type != 'NAME':
                         self.raiseError(f"Error: Predicate Name '{ext_predicate_name}' illegal, in line {line}")
                         return
-                    if ext_predicate_name not in self.predicates_names:
+                    if ext_predicate_name not in self.predicates:
                         self.raiseError(f"Error: Attempting to extend predicate '{ext_predicate_name}' that has yet to be set.")
                         return
-                    ext_predicate = self.predicates[self.predicates_names.index(ext_predicate_name)]
+                    ext_predicate = self.predicates[ext_predicate_name]
                 elif token.type == 'CASE':
                     if not moved_to_cases_ext:
                         moved_to_cases_ext = True
@@ -1319,7 +1305,7 @@ class Interpreter:
 
         :return: None
         """
-        for predicate in self.predicates:
+        for predicate in self.predicates.values():
             print(f"Predicate {predicate.name}: ")
             for basic in predicate.basic:
                 print(f"Basic Match {basic}")
@@ -1336,7 +1322,7 @@ class Interpreter:
 
         :return: None
         """
-        for package in self.packages:
+        for package in self.packages.values():
             print(f"Package {package.name} with input {package.p_pat}: ")
             for basic in package.basic:
                 print(f"Basic Match {basic}")

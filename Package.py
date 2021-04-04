@@ -31,11 +31,11 @@ class Package:
         p_name, _, p_inp = p_inp.partition("{")
         p_inp = p_inp[:-1]
 
-        if p_name not in interpreter.packages_names:
+        if p_name not in interpreter.packages:
             interpreter.raiseError(f"Error: Package {p_name} not found.")
             return False
 
-        pack_match = interpreter.packages[interpreter.packages_names.index(p_name)]
+        pack_match = interpreter.packages[p_name]
 
         t = MatchDictionary.match(interpreter, p_inp, pack_match.p_pat)
         if t:
@@ -48,8 +48,7 @@ class Package:
             for i in range(pack_match.count):
                 new_pred.addCase(smart_replace(pack_match.cases[i], forward), smart_replace(pack_match.then[i], forward))
 
-            interpreter.predicates.append(new_pred)
-            interpreter.predicates_names.append(name)
+            interpreter.predicates[name] = new_pred
 
             return True
 

@@ -71,7 +71,7 @@ def smartIn(string, find):
 # finds the type of component
 def match_type(pattern):
     """
-    Returns the match type ("constant", "var", "head" (headed list), "list" (expanded list), "title", "pack")
+    Returns the match type ("constant", "var", "head" (headed list), "list" (expanded list), "title", "pack", "pair")
 
     >>> match_type("Apple")
     'constant'
@@ -94,6 +94,10 @@ def match_type(pattern):
     :param pattern: str
     :return: str
     """
+    if "/" in pattern:
+        parts = splitWithoutParen(pattern, "/")
+        if len(parts) == 2 and parts[0][-1] != "^":
+            return "pair"
     if pattern[0] == "\"" and pattern[-1] == "\"":
         return 'constant'
     if pattern[-1] == "}":
@@ -167,7 +171,11 @@ def get_all_basics(_list, splitter=","):
     if _list == "":
         return []
 
-    t = match_type(_list)
+    t = (splitter == "/" and "pair") or match_type(_list)
+
+    if t == "pair":
+        a, b = splitWithoutParen(_list, "/")
+        return list(set(get_all_basics(a) + get_all_basics(b)))
 
     if t == 'title':
         t_name, _, t_pat = _list.partition("(")
@@ -196,7 +204,7 @@ def get_all_basics(_list, splitter=","):
                 _, _, param = comp.partition("(")
                 param = param[:-1]
                 basic_components = smartExtend(basic_components, get_all_basics(param))
-            if t == "pack":
+            if t == "pack" or t == "pair":
                 basic_components = smartExtend(basic_components, get_all_basics(comp))
     return list(set(basic_components))
 
@@ -237,7 +245,8 @@ def smart_replace(string, replace_dict):
         '&',
         '|',
         '$',
-        ":"
+        ":",
+        "/"
     ]
     for c in string:
 
@@ -249,11 +258,17 @@ def smart_replace(string, replace_dict):
                 if current_var == "?":
                     pass
                 else:
-                    new_s += replace_dict.get(current_var, current_var)
+                    addition = replace_dict.get(current_var, current_var)
+                    if match_type(addition) == "pair":
+                        addition = "(" + addition + ")"
+                    new_s += addition
                     current_var = ""
             current_var += "?"
         elif c in ending_chars and current_var:
-            new_s += replace_dict.get(current_var, current_var)
+            addition = replace_dict.get(current_var, current_var)
+            if match_type(addition) == "pair":
+                addition = "(" + addition + ")"
+            new_s += addition
             new_s += c
             current_var = ""
         elif current_var:
@@ -262,7 +277,10 @@ def smart_replace(string, replace_dict):
             new_s += c
 
     if current_var:
-        new_s += replace_dict.get(current_var, current_var)
+        addition = replace_dict.get(current_var, current_var)
+        if match_type(addition) == "pair":
+            addition = "(" + addition + ")"
+        new_s += addition
 
     return new_s
 
@@ -326,6 +344,15 @@ def processHead(string: str):
 
     if mt == "pack":
         return string
+    if mt == "pair":
+        a, b = splitWithoutParen(string, "/")
+        a = processHead(a)
+        if not a:
+            return
+        b = processHead(b)
+        if not b:
+            return
+        return f"{a}/{b}"
     if mt == 'list':
         string = string[1:-1]
         components = splitWithoutParen(string, ',')
@@ -453,10 +480,10 @@ def processSolutionDict(sol_dict):
                 variable_count[sol_dict[key]] += 1
             else:
                 variable_count[sol_dict[key]] = 1
-        if t in ["list", "head", 'title']:
+        if t in ["list", "head", 'title', 'pair']:
             sol_dict[key] = processHead(sol_dict[key])
             t = match_type(sol_dict[key])
-            basic_comps = get_all_basics(sol_dict[key], {"list":",", "head":"*", 'title':","}[t])
+            basic_comps = get_all_basics(sol_dict[key], {"list":",", "head":"*", 'title':",", 'pair':"/"}[t])
             for comp in basic_comps:
                 tb = match_type(comp)
                 if tb == "constant":
@@ -506,7 +533,7 @@ def smartUpdate(d1, d2):
     for key in d1.keys():
         if d1[key] in d2.keys():
             d[key] = d2[d1[key]]
-        elif match_type(d1[key]) in ['list', 'title', 'pack']:
+        elif match_type(d1[key]) in ['list', 'title', 'pack', 'pair']:
             original = d1[key]
             comps = get_all_basics(d1[key])
             comp_dict = {}
@@ -568,12 +595,13 @@ def formatPrint(x:str):
     if t == 'constant':
         if x[0] == "\"" and x[-1] == "\"":
             x = x[1:-1]
+            x = x.replace("??", "?")
         return x
     if t == 'var':
         return 'Unknown'
     x = processHead(x)
     t = match_type(x)
-    if t == 'list' or t == 'title':
+    if t == 'list' or t == 'title' or t == "pair":
         r_dict = {}
         basics = get_all_basics(x)
         for key in basics:
@@ -667,7 +695,8 @@ def var_in_query(string, find):
            outString(string, find + "|") or \
            outString(string, find + "}") or \
            outString(string, find + "{") or \
-           outString(string, find + "*")
+           outString(string, find + "*") or \
+           outString(string, find + "/")
 
 
 # Join a list of printable objects
@@ -770,6 +799,14 @@ def lookup(string, infixes):
         for part in parts:
             final.append(lookup(part, infixes))
         return "[" + ",".join(final) + "]"
+    if t == "pair":
+        first, second = splitWithoutParen(string, "/")
+        first, second = lookup(first, infixes), lookup(second, infixes)
+        return f"{first}/{second}"
+    if t == "head":
+        head, tail = splitWithoutParen(string[1:-1], "*")
+        head, tail = lookup(head, infixes), lookup(tail, infixes)
+        return f"[{head}*{tail}]"
     if t == "title":
         title, _, rest = string.partition('(')
         rest = splitWithoutParen(rest[:-1])
@@ -885,4 +922,4 @@ class Counter:
 
 
 if __name__ == "__main__":
-    print(remove_bracket('["1","]"]'))
+    print(smart_replace("?@1/?@2", {'?@1': '1/2', '?@2': '3/4'}))

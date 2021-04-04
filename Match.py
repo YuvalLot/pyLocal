@@ -8,7 +8,7 @@ Class that matches two patterns, a query pattern and a case pattern
 import functools
 
 from util import match_type, smart_replace, splitWithoutParen, processParen, \
-    lookup, get_all_basics, processHead
+    lookup, get_all_basics, processHead, var_in_query
 
 
 # Class used to match two patterns
@@ -186,6 +186,14 @@ class MatchDictionary:
         if typeA == 'var' and typeB == 'pack':
             return self.o_var_with_pack(compA, compB)
 
+        # Pair Match
+        if typeA == "pair" and typeB == "pair":
+            return self.o_pair_with_pair(compA, compB)
+        if typeA == "pair" and typeB == "var":
+            return self.o_pair_with_var(compA, compB)
+        if typeA == "var" and typeB == "pair":
+            return self.o_var_with_pair(compA, compB)
+
         return False
 
     def o_var_with_var(self, q_var, c_var):
@@ -262,6 +270,7 @@ class MatchDictionary:
             return True
 
     def o_list_with_var(self, q_list, c_var):
+
         if c_var in self.forward.keys():
             c_to = self.forward[c_var]
             q_basics = get_all_basics(q_list)
@@ -418,7 +427,7 @@ class MatchDictionary:
         c_name, _, c_pat = c_pack.partition("{")
         c_pat = c_pat[:-1]
 
-        if q_name != c_name or q_name not in self.interpreter.packages_names:
+        if q_name != c_name or q_name not in self.interpreter.packages:
             return False
 
         return self.outside_push(q_pat, c_pat)
@@ -427,7 +436,7 @@ class MatchDictionary:
 
         c_name, _, c_pat = c_pack.partition("{")
 
-        if c_name not in self.interpreter.packages_names:
+        if c_name not in self.interpreter.packages:
             return False
 
         if q_var in self.backward.keys():
@@ -451,7 +460,7 @@ class MatchDictionary:
 
         q_name, _, q_pat = q_pack.partition("{")
 
-        if q_name not in self.interpreter.packages_names:
+        if q_name not in self.interpreter.packages:
             return False
 
         if c_var in self.forward.keys():
@@ -471,6 +480,54 @@ class MatchDictionary:
             q_basics = get_all_basics(q_pack)
             q_trans = MatchDictionary.transform(q_pack, q_basics, self.backward)
             self.forward[c_var] = q_trans
+            return True
+
+    def o_pair_with_pair(self, q_pair, c_pair):
+        q_first, q_second = splitWithoutParen(q_pair, "/")
+        c_first, c_second = splitWithoutParen(c_pair, "/")
+        return self.o_single_push(q_first, c_first) and self.o_single_push(q_second, c_second)
+
+    def o_pair_with_var(self, q_pair, c_var):
+        if c_var in self.forward:
+            c_to = self.forward[c_var]
+            q_basics = get_all_basics(q_pair, "/")
+            q_trans = MatchDictionary.transform(q_pair, q_basics, self.backward)
+            matched = self.i_single_push(c_to, q_trans)
+            if not matched:
+                return False
+            self.forward[c_var] = smart_replace(self.forward[c_var], self.inside)
+            for b in q_basics:
+                if match_type(b) == "var" and self.backward[b] in self.inside.keys():
+                    self.backward[b] = self.inside[self.backward[b]]
+            return True
+
+        else:
+            q_basics = get_all_basics(q_pair, "/")
+            q_trans = MatchDictionary.transform(q_pair, q_basics, self.backward)
+            self.forward[c_var] = q_trans
+            return True
+
+    def o_var_with_pair(self, q_var, c_pair):
+
+        self.wiggle_room = True
+
+        if q_var in self.backward.keys():
+            q_to = self.backward[q_var]
+            c_basics = get_all_basics(c_pair, "/")
+            c_trans = MatchDictionary.transform(c_pair, c_basics, self.forward)
+            matched = self.i_single_push(q_to, c_trans)
+            if not matched:
+                return False
+            self.backward[q_var] = smart_replace(self.backward[q_var], self.inside)
+            for b in c_basics:
+                if match_type(b) == "var" and self.forward[b] in self.inside.keys():
+                    self.forward[b] = self.inside[self.forward[b]]
+            return True
+
+        else:
+            c_basics = get_all_basics(c_pair, "/")
+            c_trans = MatchDictionary.transform(c_pair, c_basics, self.forward)
+            self.backward[q_var] = c_trans
             return True
 
     """
@@ -563,6 +620,13 @@ class MatchDictionary:
         if typeA == 'pack' and typeB == 'var':
             matched = self.i_var_with_pack(compB, compA)
 
+        if typeA == 'pair' and typeB == 'pair':
+            matched = self.i_pair_with_pair(compA, compB)
+        if typeA == 'var' and typeB == 'pair':
+            matched = self.i_var_with_pair(compA, compB)
+        if typeA == 'pair' and typeB == 'var':
+            matched = self.i_var_with_pair(compB, compA)
+
         if not matched:
             return False
 
@@ -626,7 +690,7 @@ class MatchDictionary:
         i2_comps = splitWithoutParen(i2_head[1:-1], "*")
         if len(i1_comps) != 2 or len(i2_comps) != 2:
             return False
-        return self.o_single_push(i1_comps[0], i2_comps[0]) and self.o_single_push(i1_comps[1], i2_comps[1])
+        return self.i_single_push(i1_comps[0], i2_comps[0]) and self.i_single_push(i1_comps[1], i2_comps[1])
 
     def i_var_with_head(self, i1_var, i2_head):
         i2_head = smart_replace(i2_head, self.inside)
@@ -697,6 +761,25 @@ class MatchDictionary:
             self.inside[i1_var] = i2_pack
             return True
 
+    def i_pair_with_pair(self, i1_pair, i2_pair):
+        i1_comps = splitWithoutParen(i1_pair, "/")
+        i2_comps = splitWithoutParen(i2_pair, "/")
+        return self.i_single_push(i1_comps[0], i2_comps[0]) and self.i_single_push(i1_comps[1], i2_comps[1])
+
+    def i_var_with_pair(self, i1_var, i2_pair):
+        i2_first, i2_second = splitWithoutParen(smart_replace(i2_pair, self.inside), "/")
+        if var_in_query(i2_first, i1_var) or var_in_query(i2_second, i1_var):
+            return False
+        if i1_var in self.inside.keys():
+            i1_to = self.inside[i1_var]
+            matched = self.i_single_push(i1_to, i2_pair)
+            if not matched:
+                return False
+            return True
+        else:
+            self.inside[i1_var] = "(" + i2_pair + ")"
+            return True
+
     def update(self):
 
         found_repeat = False
@@ -714,14 +797,16 @@ class MatchDictionary:
         for q_key in self.backward.keys():
             if match_type(self.backward[q_key]) == 'var':
                 if self.backward[q_key] in self.inside.keys():
-                    self.backward[q_key] = self.inside[self.backward[q_key]]
+                    to_replace = self.inside[self.backward[q_key]]
+                    self.backward[q_key] = to_replace
             else:
                 self.backward[q_key] = processHead(smart_replace(self.backward[q_key], self.inside))
 
         for c_key in self.forward.keys():
             if match_type(self.forward[c_key]) == 'var':
                 if self.forward[c_key] in self.inside.keys():
-                    self.forward[c_key] = self.inside[self.forward[c_key]]
+                    to_replace = self.inside[self.forward[c_key]]
+                    self.forward[c_key] = to_replace
             else:
                 self.forward[c_key] = processHead(smart_replace(self.forward[c_key], self.inside))
 
@@ -733,8 +818,8 @@ if __name__ == "__main__":
         packages_names = ["Addition"]
 
 
-    pA = '["[","1",",","2",",","3","]"]'
-    pB = '[?c*?cs]'
+    pA = '[?b/?c]'
+    pB = '?y'
 
     # sat(?a1 ^=:= (?a2 ^* ?a3 ^* ?a4 ^* ?a5 ^* ?a6), 1) & sat(?a2 ^=:= n(?a3 ^+ ?a4 ^+ ?a5 ^+ ?a6), 1)
 

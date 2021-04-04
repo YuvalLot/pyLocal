@@ -48,6 +48,7 @@ tokens = [
     'CUT',
     'EXCLAMATION',
     'STRING',
+    'RAWSTRING',
     'EQ',
     'FILENAME',
     'FILTER',
@@ -72,9 +73,11 @@ tokens = [
     'PLUS',
     'MULTILINECOMMENT',
     'SUBS',
+    'RIGHTSLASH'
  ] + list(reserved.values())
 
 # set regular expressions for tokens
+t_RIGHTSLASH = r'\/'
 t_ARROW = r'>'
 t_CUT = r'\-cut\-'
 t_EXCLAMATION = r'\!'
@@ -130,6 +133,14 @@ def t_STRING(t):
     r'"[^"]*"'
     t.type = 'STRING'
     t.value = t.value.replace("\\n", "\n").replace("\\t", "\t")
+    return t
+
+
+# String token
+def t_RAWSTRING(t):
+    r'`[^`]*`'
+    t.type = 'STRING'
+    t.value = '"' + t.value[1:-1] + '"'
     return t
 
 
