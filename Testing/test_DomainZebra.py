@@ -137,10 +137,10 @@ class DomainZebraTest(Testing):
         set Nice
            case ?fish_owner then
               EinsteinRiddle(?c1, ?n1, ?b1, ?s1, ?p1,
-                   ?c2, ?n2, ?b2, ?s2, ?p2,
-                   ?c3, ?n3, ?b3, ?s3, ?p3,
-                   ?c4, ?n4, ?b4, ?s4, ?p4,
-                   ?c5, ?n5, ?b5, ?s5, ?p5) &
+                             ?c2, ?n2, ?b2, ?s2, ?p2,
+                             ?c3, ?n3, ?b3, ?s3, ?p3,
+                             ?c4, ?n4, ?b4, ?s4, ?p4,
+                             ?c5, ?n5, ?b5, ?s5, ?p5) &
               Align(?fish_owner, fish, [?n1, ?n2, ?n3, ?n4, ?n5], [?p1, ?p2, ?p3, ?p4, ?p5]);
         
         <subs>
@@ -159,5 +159,5 @@ class DomainZebraTest(Testing):
     def test_riddle1(self):
         self.singleSolved("solve1(?x)", x="[[8,Carrie,bathroom],[9,Lynne,garage],[10,Robert,laundry],[11,Elisa,mud]]")
 
-    def test_riddel2(self):
+    def test_riddle2(self):
         self.singleSolved("Nice(?x)", x="German")

@@ -65,7 +65,6 @@ class MatchDictionary:
         """
 
         if patternB == "...":
-            MD = MatchDictionary(interp)
             forward = {"...": f"[{patternA}]"}
             backward = functools.reduce(lambda a, b: a.update(b) or a,
                                         [{d: d for d in get_all_basics(comp) if match_type(d) == "var"} for comp in splitWithoutParen(patternA)],
@@ -483,8 +482,8 @@ class MatchDictionary:
             return True
 
     def o_pair_with_pair(self, q_pair, c_pair):
-        q_first, q_second = splitWithoutParen(q_pair, "/")
-        c_first, c_second = splitWithoutParen(c_pair, "/")
+        q_first, q_second = splitWithoutParen(q_pair[1:-1], "/")
+        c_first, c_second = splitWithoutParen(c_pair[1:-1], "/")
         return self.o_single_push(q_first, c_first) and self.o_single_push(q_second, c_second)
 
     def o_pair_with_var(self, q_pair, c_var):
@@ -762,12 +761,12 @@ class MatchDictionary:
             return True
 
     def i_pair_with_pair(self, i1_pair, i2_pair):
-        i1_comps = splitWithoutParen(i1_pair, "/")
-        i2_comps = splitWithoutParen(i2_pair, "/")
+        i1_comps = splitWithoutParen(i1_pair[1:-1], "/")
+        i2_comps = splitWithoutParen(i2_pair[1:-1], "/")
         return self.i_single_push(i1_comps[0], i2_comps[0]) and self.i_single_push(i1_comps[1], i2_comps[1])
 
     def i_var_with_pair(self, i1_var, i2_pair):
-        i2_first, i2_second = splitWithoutParen(smart_replace(i2_pair, self.inside), "/")
+        i2_first, i2_second = splitWithoutParen(smart_replace(i2_pair[1:-1], self.inside), "/")
         if var_in_query(i2_first, i1_var) or var_in_query(i2_second, i1_var):
             return False
         if i1_var in self.inside.keys():
@@ -777,7 +776,7 @@ class MatchDictionary:
                 return False
             return True
         else:
-            self.inside[i1_var] = "(" + i2_pair + ")"
+            self.inside[i1_var] = i2_pair
             return True
 
     def update(self):
@@ -818,8 +817,8 @@ if __name__ == "__main__":
         packages_names = ["Addition"]
 
 
-    pA = '[?b/?c]'
-    pB = '?y'
+    pA = '(3^+4),?x'
+    pB = '(?a^+?b),?c'
 
     # sat(?a1 ^=:= (?a2 ^* ?a3 ^* ?a4 ^* ?a5 ^* ?a6), 1) & sat(?a2 ^=:= n(?a3 ^+ ?a4 ^+ ?a5 ^+ ?a6), 1)
 

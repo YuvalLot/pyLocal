@@ -95,7 +95,7 @@ set Map
 
 set Zip
     case [], [], []
-    case [?x*?xs], [?y*?ys], [[?x, ?y] * ?zs] then Zip(?xs, ?ys, ?zs);
+    case [?x*?xs], [?y*?ys], [(?x/?y) * ?zs] then Zip(?xs, ?ys, ?zs);
 
 set Unzip
     case [], ?n, []

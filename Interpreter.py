@@ -378,7 +378,7 @@ class Interpreter:
             elif token.type == 'BUNDLE':
                 continue
 
-            elif token.type == "EXCLAMATION" and not in_macro:
+            elif token.type == "EXCLAMATION" and not at_least_one():
                 in_macro = True
                 if more_than_one():
                     self.raiseError(f'Error: Attempting to define a macro inside another statement, in line {line}.')

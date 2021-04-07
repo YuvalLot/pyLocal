@@ -8,6 +8,7 @@ includes a lot of different functions used in the project
 
 from func_timeout import func_timeout, FunctionTimedOut
 from types import GeneratorType
+import re
 
 
 # Splits a string into parts according to a splitter
@@ -94,8 +95,8 @@ def match_type(pattern):
     :param pattern: str
     :return: str
     """
-    if "/" in pattern:
-        parts = splitWithoutParen(pattern, "/")
+    if "/" in pattern and pattern[0] == "(" and pattern[-1] == ")":
+        parts = splitWithoutParen(pattern[1:-1], "/")
         if len(parts) == 2 and parts[0][-1] != "^":
             return "pair"
     if pattern[0] == "\"" and pattern[-1] == "\"":
@@ -174,6 +175,7 @@ def get_all_basics(_list, splitter=","):
     t = (splitter == "/" and "pair") or match_type(_list)
 
     if t == "pair":
+        _list = _list[1:-1]
         a, b = splitWithoutParen(_list, "/")
         return list(set(get_all_basics(a) + get_all_basics(b)))
 
@@ -259,15 +261,11 @@ def smart_replace(string, replace_dict):
                     pass
                 else:
                     addition = replace_dict.get(current_var, current_var)
-                    if match_type(addition) == "pair":
-                        addition = "(" + addition + ")"
                     new_s += addition
                     current_var = ""
             current_var += "?"
         elif c in ending_chars and current_var:
             addition = replace_dict.get(current_var, current_var)
-            if match_type(addition) == "pair":
-                addition = "(" + addition + ")"
             new_s += addition
             new_s += c
             current_var = ""
@@ -278,8 +276,6 @@ def smart_replace(string, replace_dict):
 
     if current_var:
         addition = replace_dict.get(current_var, current_var)
-        if match_type(addition) == "pair":
-            addition = "(" + addition + ")"
         new_s += addition
 
     return new_s
@@ -323,7 +319,7 @@ def processParen(string: str):
                 cnt += 1
             if char == ")" and not inQuote:
                 cnt -= 1
-    if enclosed:
+    if enclosed and match_type(string) != "pair":
         string = string[1:-1]
         string = processParen(string)
     return string
@@ -344,21 +340,14 @@ def processHead(string: str):
 
     if mt == "pack":
         return string
-    if mt == "pair":
-        a, b = splitWithoutParen(string, "/")
-        a = processHead(a)
-        if not a:
-            return
-        b = processHead(b)
-        if not b:
-            return
-        return f"{a}/{b}"
     if mt == 'list':
         string = string[1:-1]
         components = splitWithoutParen(string, ',')
         processed_comps = []
         for comp in components:
             processed_comps.append(processHead(comp))
+        if None in processed_comps:
+            return None
         return "[" + ",".join(processed_comps) + "]"
     if mt == 'title':
         if "*" not in string:
@@ -368,6 +357,8 @@ def processHead(string: str):
         processed_comps = []
         for comp in splitWithoutParen(t_pat):
             processed_comps.append(processHead(comp))
+        if None in processed_comps:
+            return None
         return title_name + "(" + ",".join(processed_comps) + ")"
     if mt != 'head':
         return string
@@ -380,6 +371,8 @@ def processHead(string: str):
     tail_type = match_type(tail)
     if tail_type in ["list", "head"]:
         tail = processHead(tail)
+        if tail is None:
+            return
         tail_type = match_type(tail)
 
     if tail_type == 'list':
@@ -402,7 +395,7 @@ def processQuery(string:str):
 
     string = string.replace("\\n", "\n").replace("\\t", "\t")
 
-    if 'with' in string:
+    if re.fullmatch(r'\bwith\b', string):
         parts = string.split('with')
         if len(parts) != 2:
             return False
@@ -410,22 +403,17 @@ def processQuery(string:str):
         if assertive == 'assertions':
             string = parts[0]
             withe = 1
-        else:
-            return False
 
     s = ""
     inString = False
-    inPython = False
     for char in string:
-        if char == "@" and not inString and inPython:
+        if char == "@" and not inString:
             return False
-        if char == "#" and not inString and not inPython:
+        if char == "#" and not inString:
             break
-        if char == '"' and not inPython:
+        if char == '"':
             inString = not inString
-        if char == '!' and not inString:
-            inPython = not inPython
-        if char in " \t" and not inString and not inPython:
+        if char in " \t" and not inString:
             continue
         s += char
 
@@ -665,6 +653,73 @@ def unfold(string:str):
     return ",".join(new_comps)
 
 
+# Dereferences References
+def deref(interpreter, string:str):
+
+    if "!" not in string:
+        return string
+
+    comps = splitWithoutParen(string)
+    new_comps = []
+    for comp in comps:
+
+        if comp.startswith("%"):
+            unfolding = True
+        else:
+            unfolding = False
+
+        t = match_type(comp)
+        if t == "constant" and comp.startswith("!"):
+            comp = deref(interpreter, comp[1:])
+            if comp not in interpreter.references:
+                return False
+            new_comps.append(interpreter.references[comp])
+        elif t in ["var", "constant"]:
+            new_comps.append(comp)
+        elif t == "head":
+            head, tail = splitWithoutParen(comp[1:-1], '*')
+            head, tail = deref(interpreter, head), deref(interpreter, tail)
+            if False in [head, tail]:
+                return False
+
+            final = f"[{head}*{tail}]"
+            final = processHead(final)
+            if not final:
+                return
+            new_comps.append(final)
+        elif t == "list":
+            elems = splitWithoutParen(comp[1:-1])
+            elems = [deref(interpreter, elem) for elem in elems]
+            if False in elems:
+                return False
+            new_comps.append("[" + ",".join(elems) + "]")
+        elif t == "pair":
+            comp = comp[1:-1]
+            first, second = splitWithoutParen(comp, "/")
+            first, second = deref(interpreter, first), deref(interpreter, second)
+            if False in [first, second]:
+                return False
+            new_comps.append(f"{first}/{second}")
+        elif t == "pack":
+            p_name, _, p_pattern = comp.partition("{")
+            p_pattern = deref(interpreter, p_pattern[:-1])
+            new_comps.append(f"{p_name}{{{p_pattern}}}")
+        elif t == "title":
+            t_name, _, t_pat = comp.partition("(")
+            t_pat = t_pat[:-1]
+            a = [deref(interpreter, sub_comp) for sub_comp in splitWithoutParen(t_pat)]
+            if False in a:
+                return False
+            new_comps.append(t_name + "(" + ",".join(a) + ")")
+        else:
+            return False
+
+        if unfolding:
+            new_comps[-1] = "%" + new_comps[-1]
+
+    return ",".join(new_comps)
+
+
 # finds if a substring is inside a string but not inside quotation marks
 def outString(string, find):
     """
@@ -685,6 +740,7 @@ def outString(string, find):
     return False
 
 
+# Variable find in a string (query)
 def var_in_query(string, find):
     return outString(string, find + ",") or \
            outString(string, find + ")") or \
@@ -800,7 +856,7 @@ def lookup(string, infixes):
             final.append(lookup(part, infixes))
         return "[" + ",".join(final) + "]"
     if t == "pair":
-        first, second = splitWithoutParen(string, "/")
+        first, second = splitWithoutParen(string[1:-1], "/")
         first, second = lookup(first, infixes), lookup(second, infixes)
         return f"{first}/{second}"
     if t == "head":
@@ -856,16 +912,13 @@ def remove_whitespace(string:str):
     """
     removed = ""
     inQuote = False
-    inPython = False
 
     for c in string:
-        if c == "!" and not inQuote:
-            inPython = not inPython
-        if c == "\"" and not inPython:
+        if c == "\"":
             inQuote = not inQuote
-        if c == " " and not inQuote and not inPython:
+        if c == " " and not inQuote:
             continue
-        if c == "\t" and not inQuote and not inPython:
+        if c == "\t" and not inQuote:
             continue
         removed += c
 
@@ -922,4 +975,9 @@ class Counter:
 
 
 if __name__ == "__main__":
-    print(smart_replace("?@1/?@2", {'?@1': '1/2', '?@2': '3/4'}))
+    # from collections import namedtuple
+    # RefStruct = namedtuple("RefStruct", "references")
+    # x = RefStruct(references={'0x981f4c': 'node(1,0x5d116)', '0x5d116': 'node(2,0xe0b14)', '0xe0b14': 'node(3,0xc45f0)', '0xc45f0': 'node(4,0x58d76)', '0x58d76': 'nil'})
+    # print(deref(x, "!0x981f4c,node(?@11,?@12)"))
+    # print(remove_whitespace("Ref.new(?x) & ?x := [] & ?x := [2 * !?x] & Print(!?x)"))
+    print(match_type("!?t:B(?x)"))

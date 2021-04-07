@@ -42,7 +42,7 @@ class Domain:
             return False
         return True
 
-    def insert_variables(self, variables, line):
+    def insert_variables(self, variables:str, line):
         """
         Inserts variables to the domain predicate.
 
@@ -50,6 +50,12 @@ class Domain:
         :param line: int
         :return: bool
         """
+        a, _, b = variables.partition("(")
+        b = b[:-1]
+        if a.isnumeric() and match_type(b) == "var":
+            self.variables = [f"{b}{i}" for i in range(1, int(a)+1)]
+            print(self.variables)
+            return True
         self.raw_vars = variables
         self.variables = splitWithoutParen(variables)
         if any(match_type(var) != "var" for var in self.variables):
