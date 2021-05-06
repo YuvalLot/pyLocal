@@ -20,7 +20,7 @@ class PairTest(Testing):
 
         """
 
-        cls.compiler = cls.upload(data)
+        cls.interpreter = cls.upload(data)
 
     def test_BasicPair(self):
         self.singleSolved("A(?x)", x="(1/2)")

@@ -458,7 +458,7 @@ def processSolutionDict(sol_dict):
     variable_count = {}
 
     for key in sol_dict.keys():
-        if key[1]=="@":
+        if key[1] == "@" or key[0] != "?":
             continue
         t = match_type(sol_dict[key])
         if t == "constant":
@@ -493,7 +493,7 @@ def processSolutionDict(sol_dict):
 
     final_sol = {}
     for key in sol_dict.keys():
-        if key[1] == "@":
+        if key[1] == "@" or key[0] != "?":
             continue
         final_sol[key] = smart_replace(sol_dict[key], variable_replacing)
         if final_sol[key][0] == '"':
@@ -517,30 +517,11 @@ def smartUpdate(d1, d2):
     :param d2: dict
     :return: dict
     """
+
     d = {}
-    for key in d1.keys():
-        if d1[key] in d2.keys():
-            d[key] = d2[d1[key]]
-        elif match_type(d1[key]) in ['list', 'title', 'pack', 'pair']:
-            original = d1[key]
-            comps = get_all_basics(d1[key])
-            comp_dict = {}
-            for comp in comps:
-                if comp in d2.keys():
-                    comp_dict[comp] = d2[comp]
-            new = smart_replace(original, comp_dict)
-            d[key] = new
-        elif match_type(d1[key]) == "head":
-            original = d1[key]
-            comps = get_all_basics(d1[key], "*")
-            comp_dict = {}
-            for comp in comps:
-                if comp in d2.keys():
-                    comp_dict[comp] = d2[comp]
-            new = smart_replace(original, comp_dict)
-            d[key] = new
-        else:
-            d[key] = d1[key]
+    for key in d1:
+        d[key] = smart_replace(d1[key], d2)
+
     d.update(d2)
     return d
 
@@ -980,4 +961,4 @@ if __name__ == "__main__":
     # x = RefStruct(references={'0x981f4c': 'node(1,0x5d116)', '0x5d116': 'node(2,0xe0b14)', '0xe0b14': 'node(3,0xc45f0)', '0xc45f0': 'node(4,0x58d76)', '0x58d76': 'nil'})
     # print(deref(x, "!0x981f4c,node(?@11,?@12)"))
     # print(remove_whitespace("Ref.new(?x) & ?x := [] & ?x := [2 * !?x] & Print(!?x)"))
-    print(match_type("!?t:B(?x)"))
+    print(unfold("Fruit(Apple,15,red),%[]"))

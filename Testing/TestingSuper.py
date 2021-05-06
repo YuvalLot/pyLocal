@@ -17,7 +17,7 @@ def toLCL(_list):
 class Testing(unittest.TestCase):
 
     @classmethod
-    def upload(cls, data, _imports=None):
+    def upload(cls, data):
         lexer = Lexer.build()
         lexer.input(data)
         tokens = []
@@ -26,25 +26,25 @@ class Testing(unittest.TestCase):
             if not tok:
                 break  # No more input
             tokens.append(tok)
-        compiler = Interpreter.Interpreter(20, imports, path="D:\Yuval Lotenberg\Documents\LCL")
-        compiler.read(tokens)
+        interpreter = Interpreter.Interpreter(20, imports, path="D:\Yuval Lotenberg\Documents\LCL")
+        interpreter.read(tokens)
 
-        if len(compiler.errorLoad) != 0:
+        if len(interpreter.errorLoad) != 0:
 
-            logging.debug(f"{compiler.errorLoad}")
+            logging.debug(f"{interpreter.errorLoad}")
 
-            if not compiler.errorLoad == []:
-                print(compiler.errorLoad)
+            if not interpreter.errorLoad == []:
+                print(interpreter.errorLoad)
                 assert False
 
-        return compiler
+        return interpreter
 
 
     def generic(self, query=None, expected=None, notExpected=None):
         if query is None or expected is None:
             return
 
-        sols = list(self.compiler.mixed_query(query, 0, 10000, unP=True))
+        sols = list(self.interpreter.mixed_query(query, 0, 10000, unP=True))
         for e in expected:
             self.assertIn(e, sols, msg=f"Expected {e} in {query}")
             if e in sols:
@@ -60,7 +60,7 @@ class Testing(unittest.TestCase):
         if query is None:
             return
 
-        sols = list(self.compiler.mixed_query(query, 0, 300, unP=True))
+        sols = list(self.interpreter.mixed_query(query, 0, 300, unP=True))
 
         self.assertEqual(len(sols), 1, msg=f"Expected True for {query}")
         self.assertEqual(sols[0], {}, msg=f"Expected no variables for {query}, in {sols[0]}")
@@ -69,7 +69,7 @@ class Testing(unittest.TestCase):
         if query is None:
             return
 
-        sols = list(self.compiler.mixed_query(query, 0, 300, unP=True))
+        sols = list(self.interpreter.mixed_query(query, 0, 300, unP=True))
 
         self.assertEqual(len(sols), 0, msg=f"Query {query} has solutions: {sols}")
 
@@ -77,7 +77,7 @@ class Testing(unittest.TestCase):
         if query is None:
             return
 
-        sols = list(self.compiler.mixed_query(query, 0, 300, unP=True))
+        sols = list(self.interpreter.mixed_query(query, 0, 300, unP=True))
         self.assertNotEqual(len(sols), 0, msg=f"Query {query} has no solutions")
 
     def resulted(self, query=None, var=None, result=None):
@@ -90,7 +90,7 @@ class Testing(unittest.TestCase):
         if query is None:
             return
 
-        sols = list(self.compiler.mixed_query(query, 0, 10000, unP=True))
+        sols = list(self.interpreter.mixed_query(query, 0, 20000, unP=True))
         self.assertEqual(len(sols), 1, msg=f"Expected Single solution for {query}")
 
         sol_dict = {}
@@ -113,7 +113,7 @@ class Testing(unittest.TestCase):
                 for key, value in kwargs.items():
                     d["?" + key] = kwargs[key][i]
                 dicts.append(d)
-            sols = list(self.compiler.mixed_query(query, 0, 10000, unP=True))
+            sols = list(self.interpreter.mixed_query(query, 0, 20000, unP=True))
             self.assertEqual(len(sols), n, msg=f"Expected {n} solutions to {query}")
             for sol in sols:
                 d = sol.copy()

@@ -59,7 +59,7 @@ set _Len
 	case [?x * ?xs], ?n then _Len(?xs, ?m) & Add(?m, 1, ?n);
 
 set Len
-    case ?x, ?y then _Len(?x, ?y) & -cut-;
+    case ?x, ?y then _Len(?x, ?y) \ True();
 
 set SameLen as recursive
 	case [],[]

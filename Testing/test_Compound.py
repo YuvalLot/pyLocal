@@ -30,7 +30,7 @@ class CompoundTest(Testing):
 
         """
 
-        cls.compiler = cls.upload(data)
+        cls.interpreter = cls.upload(data)
 
     def test_AddThree(self):
         self.singleSolved("AddThree(4,?x)", x=7)

@@ -79,7 +79,7 @@ tokens = [
 # set regular expressions for tokens
 t_RIGHTSLASH = r'\/'
 t_ARROW = r'>'
-t_CUT = r'\-cut\-'
+t_CUT = r'\\'
 t_EXCLAMATION = r'\!'
 t_COLON = r':'
 t_EQ = r'='

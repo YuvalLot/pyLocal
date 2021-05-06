@@ -124,6 +124,8 @@ class Interpreter:
 
         self.filepath = None  # for imports and such
 
+        self.console_trace_on = False
+
     def setFilePath(self, path):
         """
         when a new file is uploaded.
@@ -235,6 +237,9 @@ class Interpreter:
         properties = ('recursive', 'generative', 'random')
         line = 1
 
+        # Sub
+        in_sub = False
+
         # Package Variables
         in_pack = False
         new_package = None
@@ -244,9 +249,6 @@ class Interpreter:
         package_param = ''
         package_case = ''
         package_then = ''
-
-        # Sub
-        in_sub = False
 
         opened_pack_param = False
         closed_pack_param = False

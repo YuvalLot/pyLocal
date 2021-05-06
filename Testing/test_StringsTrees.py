@@ -14,7 +14,7 @@ class StringsTrees(Testing):
             case Branch(Apple, Branch(Orange, Leaf, Branch(Cherry, Leaf, Leaf)), Branch(Blueberry,Branch(Lemon, Leaf, Leaf),Branch(Pineapple, Leaf, Leaf)));
 
         """
-        cls.compiler = cls.upload(data)
+        cls.interpreter = cls.upload(data)
 
     def test_Tree_Tree(self):
         self.solved("SampleTree(?x)&BinaryTree(?x)")

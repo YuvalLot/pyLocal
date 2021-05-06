@@ -68,11 +68,11 @@ class BackChainingTest(Testing.TestingSuper.Testing):
             case 3;
         
         set Cut
-            case ?x then Cut1(?x) & -cut-;
+            case ?x then Cut1(?x) \ True();
         
         """
 
-        cls.compiler = cls.upload(data)
+        cls.interpreter = cls.upload(data)
 
     def test_Father(self):
 

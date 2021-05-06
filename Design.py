@@ -154,20 +154,10 @@ class Console:
         :return:
         """
 
-        if not new_line:
-            self.console.config(state=NORMAL)
-            old_text = (self.console.get(1.0, END))
-            old_text = old_text[:-1]
-            self.console.delete(1.0, END)
-            self.console.insert(END, old_text)
-            self.console.insert(END, text)
-            self.console.config(state=DISABLED)
-            self.console.see(END)
-            return
-
         self.console.config(state=NORMAL)
-        self.console.insert(END, "\n")
         self.console.insert(END, text)
+        if new_line:
+            self.console.insert(END, "\n")
         self.console.config(state=DISABLED)
         self.console.see(END)
 

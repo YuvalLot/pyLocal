@@ -31,7 +31,7 @@ class RandomTypesSaveTest(Testing):
         use I{4} as Four;
         
         """
-        cls.compiler = cls.upload(data)
+        cls.interpreter = cls.upload(data)
 
     def test_General(self):
 

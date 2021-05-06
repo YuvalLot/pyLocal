@@ -184,7 +184,7 @@ class Predicate:
         """
         Given a pattern, look through all cases and determine if there exists a match.
         if match is basic, return basic solution.
-        if match is terminal, return False.
+         if match is terminal, return False.
         if match is translational, return the new search that has to be done, and a way (the backward dictionary) to translate from solutions of the new
         search back to the parameters given in the pattern. This is the fundamental idea of back chaining, used to solved queries.
 
@@ -201,7 +201,6 @@ class Predicate:
         for nope in self.nope:
             t = MatchDictionary.match(self.interpreter, pattern, nope)
             if t and not t[2]:  # only in the case the patterns matched AND no wiggle room
-                # print(f"Match, therefore not: {t[0]},{t[1]}")
                 return
 
         if self.random:
@@ -237,7 +236,6 @@ class Predicate:
         for basic in self.basic:
             t = MatchDictionary.match(self.interpreter, pattern, basic)
             if t:
-                # print(f"Match basic: {t[0]},{t[1]}")
                 yield 1, t[1], t[0]
                 if self.recursive:
                     return
@@ -245,7 +243,6 @@ class Predicate:
         for i in range(self.count):
             t = MatchDictionary.match(self.interpreter, pattern, self.cases[i])
             if t:
-                # print(f"Matched with {self.cases[i]}: {t[0]},{t[1]}")
                 then = self.then[i]
                 then = smart_replace(then, t[0])
                 yield then, t[1], t[0]

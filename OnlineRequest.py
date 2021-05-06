@@ -102,5 +102,5 @@ def url_opener(url):
 
 
 if __name__ == "__main__":
-    x = url_opener("http://www.randomnumberapi.com/api/v1.0/random?min=1&max=10&count=1")
+    x = url_opener("https://www.html.am/templates/downloads/bryantsmith/greenblade/")
     print(is_valid(x))

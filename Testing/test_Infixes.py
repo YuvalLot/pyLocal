@@ -29,7 +29,7 @@ class InfixesTest(Testing.TestingSuper.Testing):
         
         """
 
-        cls.compiler = cls.upload(data)
+        cls.interpreter = cls.upload(data)
 
     def test_Math_Infixes(self):
         self.singleSolved("Eval(3^+4,?x)", x="7")

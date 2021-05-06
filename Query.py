@@ -1,4 +1,5 @@
 import time
+from copy import deepcopy
 from typing import List, Tuple
 
 import BuiltIns
@@ -66,11 +67,19 @@ class Query:
         :return: None
         """
 
+        # looking for cuts
+        searchForCuts = splitWithoutParen(query, "\\")
+        if len(searchForCuts) != 1:
+            self.gateA = Query.create(self.interpreter, searchForCuts[0])
+            self.gateB = Query.create(self.interpreter, "\\".join(searchForCuts[1:]))
+            self.type = '\\'
+            return
+
         # looking for ands
         searchForAnd = splitWithoutParen(query, "&")
         if len(searchForAnd) != 1:
-            self.gateB = Query.create(self.interpreter, searchForAnd[-1])
-            self.gateA = Query.create(self.interpreter, "&".join(searchForAnd[:-1]))
+            self.gateA = Query.create(self.interpreter, searchForAnd[0])
+            self.gateB = Query.create(self.interpreter, "&".join(searchForAnd[1:]))
             self.type = '&'
             return
 
@@ -139,7 +148,7 @@ class Query:
             return
 
         # Folding
-        if outString(query, "%") and len(splitWithoutParen(query, "%")) == 1:
+        if outString(query, "%") and len(splitWithoutParen(query, "%")) == 1 and not outString(query, ":"):
             self.gateA = query
             self.type = "%"
             return
@@ -166,11 +175,12 @@ class Query:
         :return: Query (updated)
         """
         Q = Query(self.interpreter)
+
         if self.type == 'r' or self.type == 'pi' or self.type == 'pc' or self.type == "%" or self.type == "!":
             # print(f"New Info is {info}")
             Q.gateA = smart_replace(self.gateA, info)
             Q.type = self.type
-        elif self.type in ['&', '|', '$']:
+        elif self.type in ['&', '|', '$', '\\']:
             try:
                 Q.gateA = self.gateA.add_new_info(info)
                 Q.gateB = self.gateB.add_new_info(info)
@@ -204,6 +214,8 @@ class Query:
             return f"{self.gateA}"
         elif self.type == '&':
             return "(" + str(self.gateA) + ")" + "&" + "(" + str(self.gateB) + ")"
+        elif self.type == '\\':
+            return "(" + str(self.gateA) + ")" + "\\" + "(" + str(self.gateB) + ")"
         elif self.type == "c":
             s = ",".join([f"{cond} > {search}" for cond, search in self.cond])
             return f"cond({s})"
@@ -225,6 +237,7 @@ class Query:
         Given type "r" looks for predicates
         Given type "~" looks to see that a predicate doesn't have a solution
         Given type "&" looks for both gates of query, uses the first to 'feed' the second
+        Given type "\\" looks for left side once only, and then right size
         Given type "|" yields from first gate, and from second gate
         Given type "$" yields from first gate, if none yielded, yields from second gate
         Given type "pi", represents Package{param}(variables), searched packages
@@ -238,9 +251,8 @@ class Query:
         if depth.count < 0:
             return
 
-        # MyLen(?xs, 81) & sod(%?xs)
-
-        # print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
+        if self.interpreter.console_trace_on:
+            print(f"Searching for {self.__str__()}, with accumulated depth of {depth}, type {self.type}")
 
         if self.interpreter.trace_on:
             self.interpreter.message(f"Searching for {self.__str__()}")
@@ -252,7 +264,7 @@ class Query:
             if not self.gateA:
                 return
 
-            if ":" in self.gateA:
+            if outString(self.gateA, ":"):
                 data_name, _, second_part = self.gateA.partition(":")
                 action, _, query_pat = second_part.partition("(")
                 query_pat = query_pat[:-1]
@@ -271,8 +283,8 @@ class Query:
                 elif match_type(data_name) == "title":
                     t_name, _, t_pattern = data_name.partition("(")
                     start = ""
-                    if f"{t_name}.metacall" in self.interpreter.predicates:
-                        start = f"{t_name}.metacall(" + data_name + "," + action + ",[" + query_pat + "])"
+                    if f"{t_name}.metacall" in self.interpreter.predicates and action != "metacall":
+                        start = f"{t_name}.metacall(" + data_name + "," + action + ",[" + query_pat + "])&"
                     class_prefix = f"{t_name}.{action}"
                     if class_prefix in self.interpreter.predicates:
                         class_string = start + f"{class_prefix}(" + data_name + (query_pat and "," + query_pat) + ")"
@@ -360,7 +372,6 @@ class Query:
 
             found = [False]
             for solution in BuiltIns.builtin(self.interpreter, query_name, query_pat, depth, found):
-                builtin_yielded = True
                 yield solution
             if found[0]:
                 return
@@ -375,25 +386,14 @@ class Query:
                         yield m[1]
                 return
 
+            query_name, _, query_pat = self.gateA.partition("(")
+            query_pat = query_pat[:-1]
+
             predicate_match = self.interpreter.predicates.get(query_name, None)
 
             if predicate_match:
                 for search, backward, forwards in predicate_match.match(query_pat):
                     if search == 1:
-                        """
-                        solution = forwards
-                        solution_as_dict = {}
-                        print(forwards, backward)
-                        for key in backward.keys():
-                            if backward[key] in solution.keys():
-                                to_replace = solution[backward[key]]
-                                solution_as_dict[key] = to_replace
-                            elif match_type(backward[key]) in ['list', 'head', 'title', 'pair', 'pack']:
-                                solution_as_dict[key] = processHead(smart_replace(backward[key], solution))
-                            else:
-                                solution_as_dict[key] = backward[key]
-                        yield solution_as_dict
-                        """
                         yield backward
                     else:
                         next_q = Query.create(self.interpreter, search)
@@ -406,28 +406,62 @@ class Query:
                             if solution == "Print":
                                 yield "Print"
                                 continue
-                            # print(f"Solution to original problem: {solution}, with {backward}")
+
                             solution_as_dict = {}
                             for key in backward.keys():
 
                                 if backward[key] in solution.keys():
                                     solution_as_dict[key] = solution[backward[key]]
-                                elif match_type(backward[key]) in ['list', 'head', 'title', 'pack', 'pair']:
-                                    solution_as_dict[key] = processHead(smart_replace(backward[key], solution))
                                 else:
-                                    solution_as_dict[key] = backward[key]
+                                    solution_as_dict[key] = processHead(smart_replace(backward[key], solution))
 
                             yield solution_as_dict
 
         # filter clause
         elif self.type == "~":
+
             if not self.gateA:
                 return
-            new_depth = Counter(depth.count // 2)
-            for _ in self.gateA.search(new_depth):
-                return
-            depth.sub(depth.count // 2 - new_depth.count)
+
+            for sol in self.gateA.search(depth):
+                if sol != "Print" and sol != "Request":
+                    return
+
             yield {}
+
+        # cut clause
+        elif self.type == "\\":
+
+            if not self.gateA or not self.gateB:
+                return
+
+            try:
+                gen = self.gateA.search(depth)
+                p_solution = next(gen)
+                while p_solution in ["Print", "Request"]:
+                    yield p_solution
+                    p_solution = next(gen)
+
+                updated_gate_B = self.gateB.add_new_info(p_solution)
+
+                for solution in updated_gate_B.search(depth):
+
+                    if solution == "Request":
+                        yield "Request"
+                        continue
+
+                    if solution == "Print":
+                        yield "Print"
+                        continue
+
+                    q_solution = p_solution.copy()
+                    q_solution = smartUpdate(q_solution, solution)
+                    yield q_solution
+
+            except StopIteration:
+                pass
+            finally:
+                return
 
         # and clause
         elif self.type == "&":
@@ -435,23 +469,7 @@ class Query:
             if not self.gateA or not self.gateB:
                 return
 
-            if self.gateB.gateA == "-cut-":
-                try:
-                    gen = self.gateA.search(depth)
-                    x = next(gen)
-                    while x in ["Print", "Request"]:
-                        print(f"Got Exception : {x}")
-                        yield x
-                        x = next(gen)
-                    yield x
-                except StopIteration:
-                    pass
-                finally:
-                    return
-
             for p_solution in self.gateA.search(depth):
-
-                # print(f"The solution to {str(self.gateA)} is {str(p_solution)}")
 
                 if p_solution == "Request":
                     yield "Request"
@@ -459,11 +477,8 @@ class Query:
                 if p_solution == "Print":
                     yield "Print"
                     continue
-                try:
-                    updated_gate_B = self.gateB.add_new_info(p_solution)
-                except AttributeError as e:
-                    print(self, self.gateB, self.type)
-                    raise e
+
+                updated_gate_B = self.gateB.add_new_info(p_solution)
 
                 for solution in updated_gate_B.search(depth):
                     if solution == "Request":
@@ -474,7 +489,6 @@ class Query:
                         continue
 
                     q_solution = p_solution.copy()
-                    # print(f"The Two solutions are {q_solution} and {solution}")
                     q_solution = smartUpdate(q_solution, solution)
                     yield q_solution
 
@@ -495,8 +509,10 @@ class Query:
             first_solutions = self.gateA.search(depth)
             found_in_first = False
             for sol in first_solutions:
-                found_in_first = True
+                if sol != "Print" or sol != "Request":
+                    found_in_first = True
                 yield sol
+
             if not found_in_first:
                 yield from self.gateB.search(depth)
 
@@ -579,18 +595,39 @@ class Query:
                 yield from new_query.search(depth)
 
             try:
-                query_name, query_pat = self.gateA.split("(")
+                query_name, _, query_pat = self.gateA.partition("(")
                 query_pat = query_pat[:-1]
             except ValueError:
                 return
 
             query_pat = unfold(query_pat)
-            if not query_pat:
+            if query_pat == False or query_pat is None:
                 return
             new_query = Query.create(self.interpreter, f"{query_name}({query_pat})")
+            print(new_query)
             if new_query:
                 yield from new_query.search(depth)
             return
+
+        # Conditional Statements
+        elif self.type == 'c':
+            for key, value in self.cond:
+                if not key or not value:
+                    continue
+                try:
+                    search = key.search(depth)
+                    p_solution = next(search)
+                    while p_solution in ["Print", "Request"]:
+                        yield p_solution
+                        p_solution = next(search)
+                    for sol in value.add_new_info(p_solution).search(depth):
+                        if sol in ["Print", "Request"]:
+                            yield sol
+                            continue
+                        yield smartUpdate(p_solution, sol)
+                    return
+                except StopIteration:
+                    continue
 
         # Dereference
         elif self.type == "!":
@@ -632,26 +669,6 @@ class Query:
             if new_query:
                 yield from new_query.search(depth)
             return
-
-        # Conditional Statements
-        elif self.type == 'c':
-            for key, value in self.cond:
-                if not key or not value:
-                    continue
-                try:
-                    search = key.search(depth)
-                    p_solution = next(search)
-                    while type(p_solution) is str:
-                        yield p_solution
-                        p_solution = next(search)
-                    for sol in value.add_new_info(p_solution).search(depth):
-                        if type(sol) is str:
-                            yield sol
-                            continue
-                        yield smartUpdate(p_solution, sol)
-                    return
-                except StopIteration:
-                    continue
 
         # Setting Reference
         elif self.type == ':=':

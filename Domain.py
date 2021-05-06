@@ -64,6 +64,11 @@ class Domain:
         return True
 
     def shut_down(self):
+        """
+        Shuts down this domain
+
+        :return:
+        """
         self.deleted = True
 
     def insert_range(self, variable, range_search, line):
@@ -192,7 +197,7 @@ class Domain:
         # print(f"domain ranges {ranges}, with fixed {fixed}\n")
         yield from self.solve(depth, ranges, fixed, consts, elims, already)
 
-    def solve(self, depth, ranges, fixed, rel_const = None, rel_elim = None, already = None):
+    def solve(self, depth, ranges, fixed, rel_const, rel_elim, already):
         """
         Solves a constraint problem.
         ranges represents the ranges of variables in the constraint problem.
@@ -212,17 +217,10 @@ class Domain:
         if depth.count < 0:
             return
 
-        if rel_const is None:
-            rel_const = self.constraints
-        if rel_elim is None:
-            rel_elim = self.eliminations
-        if already is None:
-            already = set()
-
         if self.deleted:
-            # print("Weird Error lol")
             return
 
+        # if there are any ranges with length 1 or 0
         flag = True
         while flag:
             flag = False
@@ -230,19 +228,14 @@ class Domain:
                 if len(ranges[var]) == 0:
                     return
                 if len(ranges[var]) == 1:
-                    # print(f"{var} has one option")
                     flag = True
-                    fixed[var] = next(iter(ranges[var]))
+                    fixed[var] = ranges[var].pop()
                     del ranges[var]
             if flag:
                 if not self.update_range(depth, ranges, fixed, consts=rel_const, elims=rel_elim, already=already):
                     return
 
-        # print(f"With fixed {fixed}, the ranges are {ranges}")
-        # Print(f"With have a len of {len(fixed)}")
-
         if len(ranges) == 0:
-            # print(fixed)
             if self.final == "":
                 yield fixed
                 return True
@@ -257,7 +250,6 @@ class Domain:
         for option in rng:
 
             if self.deleted:
-                # print("Weird Error lol")
                 return
 
             new_ranges = deepcopy(ranges)
@@ -287,37 +279,33 @@ class Domain:
         """
 
         if self.deleted:
-            # print("Weird Error lol")
-            self.interpreter.deleted = False
             return
 
         for const in list(consts.keys()):
             possible_sols = {}
-            # var: set() for var in consts[const] if var not in fixed
-
             new_set = set()
 
             for var in consts[const]:
-                if var in fixed:
-                    pass
-                else:
+                if var not in fixed:
                     possible_sols[var] = set()
                     new_set.add(var)
 
             consts[const] = new_set
-
             original_const = const
             const = smart_replace(const, fixed)
 
             if const in already:
+                # already searched this constraint
                 continue
             else:
                 already.add(const)
 
+            # checking for when conditions
             try:
                 if self.when[original_const] != "":
                     next(self.interpreter.mixed_query(smart_replace(self.when[original_const], fixed), 0, depth, True))
             except StopIteration:
+                # for when
                 continue
 
             if len(possible_sols) == 0:
@@ -329,12 +317,10 @@ class Domain:
                     return False
 
             for sol in self.interpreter.mixed_query(const, 0, depth, True):
-                # print(f"Solution to {const} is {sol}, with possible solutions {possible_sols}")
                 for var in possible_sols:
                     if var in sol:
                         possible_sols[var].add(sol[var])
 
-            # ex5usingDOM(?1, ?2, ?3, ?4, ?5, ?6)
             for var in possible_sols:
                 if any(match_type(possible_value) == "var" for possible_value in possible_sols[var]):
                     continue
@@ -382,6 +368,7 @@ class Domain:
                 ranges[var] = ranges[var].difference(impossible_sols[var])
                 if len(ranges[var]) == 0:
                     return False
+
         return True
 
 

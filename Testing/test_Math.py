@@ -14,7 +14,7 @@ class MathTest(Testing):
         import NumberList;
 
         """
-        cls.compiler = cls.upload(data)
+        cls.interpreter = cls.upload(data)
 
     def test_Math(self):
 

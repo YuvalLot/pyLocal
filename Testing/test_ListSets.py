@@ -35,7 +35,7 @@ class ListsTest(Testing):
             case ?x, ?y then Appended(1, ?x, ?y); 
 
         """
-        cls.compiler = cls.upload(data)
+        cls.interpreter = cls.upload(data)
         cls.lists = {"[1,2,3,4,5,6,7,8]":["1","2","3","4",'5',"6",'7','8'],
                      "[A,B,C,D,E,F]":["A", "B", "C", "D","E","F"],
                      "[G,H,I,J,K,L]":["G","H","I","J","K","L"],
@@ -191,8 +191,8 @@ class ListsTest(Testing):
         self.singleSolved("Duplicate([[]],5,?x)", x=toLCL([[]]*5))
 
     def test_ZipUnzip(self):
-        self.singleSolved("Zip([1,2,3],[A,B,\"Charlie\"],?x)", x=toLCL(["[1,A]","[2,B]",'[3,"Charlie"]']))
-        self.singleSolved("Zip(?x,?y,[[1,2],[3,4],[G,H]])", x="[1,3,G]", y="[2,4,H]")
+        self.singleSolved("Zip([1,2,3],[A,B,\"Charlie\"],?x)", x=toLCL(["(1/A)","(2/B)",'(3/"Charlie")']))
+        self.singleSolved("Zip(?x,?y,[(1/2),(3/4),(G/H)])", x="[1,3,G]", y="[2,4,H]")
         self.singleSolved("Unzip([[1,2,3],[4,5,6,G,H],[A,B,\"Hello You There\"]],2,?x)", x='[3,6,"Hello You There"]')
 
     def test_AddToEach(self):

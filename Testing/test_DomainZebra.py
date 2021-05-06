@@ -154,7 +154,7 @@ class DomainZebraTest(Testing):
         </subs>
         """
 
-        cls.compiler = cls.upload(data)
+        cls.interpreter = cls.upload(data)
 
     def test_riddle1(self):
         self.singleSolved("solve1(?x)", x="[[8,Carrie,bathroom],[9,Lynne,garage],[10,Robert,laundry],[11,Elisa,mud]]")

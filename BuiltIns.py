@@ -56,10 +56,7 @@ def builtin(interpreter, query_name, query_pat, depth, found):
         if len(comps) != 2:
             return
         comp1, comp2 = comps
-        if match_type(comp1) == "head":
-            bs = get_all_basics(comp1, "*")
-        else:
-            bs = get_all_basics(comp1)
+        bs = get_all_basics(comp1)
         copy = MatchDictionary.transform(comp1, bs, {})
         m = MatchDictionary.match(interpreter, comp2, copy)
         if m:
@@ -72,7 +69,6 @@ def builtin(interpreter, query_name, query_pat, depth, found):
         parts = splitWithoutParen(query_pat)
         if len(parts) != 2:
             return
-        print(parts[0][1:-1])
         try:
             inLcl = url_opener(parts[0][1:-1])
             if inLcl is None:
@@ -460,6 +456,10 @@ def builtin(interpreter, query_name, query_pat, depth, found):
             interpreter.trace_on = True
         elif query_pat == "Off":
             interpreter.trace_on = False
+        elif query_pat == "OnOn":
+            interpreter.console_trace_on = True
+        elif query_pat == "OffOff":
+            interpreter.console_trace_on = False
         else:
             return
         yield {}

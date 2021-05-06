@@ -57,7 +57,7 @@ class PredsDictsSeqs(Testing.TestingSuper.Testing):
         
         """
 
-        cls.compiler = cls.upload(data)
+        cls.interpreter = cls.upload(data)
 
     def test_Preds_PatternToList(self):
         self.noSolution("C([?x,?y])")

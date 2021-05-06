@@ -5,6 +5,7 @@ Match
 Class that matches two patterns, a query pattern and a case pattern
 
 """
+
 import functools
 
 from util import match_type, smart_replace, splitWithoutParen, processParen, \
@@ -52,7 +53,6 @@ class MatchDictionary:
         self.wiggle_room = False  # checks if the matching is essential, i.e. whether it can be avoided
         self.interpreter = interp
 
-    # DONE
     @classmethod
     def match(cls, interp, patternA: str, patternB: str):
         """
@@ -794,20 +794,10 @@ class MatchDictionary:
     def o_update(self):
 
         for q_key in self.backward.keys():
-            if match_type(self.backward[q_key]) == 'var':
-                if self.backward[q_key] in self.inside.keys():
-                    to_replace = self.inside[self.backward[q_key]]
-                    self.backward[q_key] = to_replace
-            else:
-                self.backward[q_key] = processHead(smart_replace(self.backward[q_key], self.inside))
+            self.backward[q_key] = processHead(smart_replace(self.backward[q_key], self.inside))
 
         for c_key in self.forward.keys():
-            if match_type(self.forward[c_key]) == 'var':
-                if self.forward[c_key] in self.inside.keys():
-                    to_replace = self.inside[self.forward[c_key]]
-                    self.forward[c_key] = to_replace
-            else:
-                self.forward[c_key] = processHead(smart_replace(self.forward[c_key], self.inside))
+            self.forward[c_key] = processHead(smart_replace(self.forward[c_key], self.inside))
 
 
 if __name__ == "__main__":

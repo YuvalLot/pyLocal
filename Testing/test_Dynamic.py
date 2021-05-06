@@ -16,7 +16,7 @@ class DynamicTest(Testing):
         
         """
 
-        cls.compiler = cls.upload(data)
+        cls.interpreter = cls.upload(data)
 
     def test_Assert(self):
 
