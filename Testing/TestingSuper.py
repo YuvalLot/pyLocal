@@ -122,7 +122,6 @@ class Testing(unittest.TestCase):
                         del d[var]
                 self.assertIn(d, dicts, msg=f"Received {d}, in query {query}")
 
-
         else:
             dicts = []
             n = len(kwargs[list(kwargs.keys())[0]])

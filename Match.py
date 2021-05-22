@@ -798,18 +798,3 @@ class MatchDictionary:
 
         for c_key in self.forward.keys():
             self.forward[c_key] = processHead(smart_replace(self.forward[c_key], self.inside))
-
-
-if __name__ == "__main__":
-    class Foo:
-        titles = ['^+', '^-', '^*', '^/', '^=:=', "n"] + ["mem"]
-        infixes = titles
-        packages_names = ["Addition"]
-
-
-    pA = '(3^+4),?x'
-    pB = '(?a^+?b),?c'
-
-    # sat(?a1 ^=:= (?a2 ^* ?a3 ^* ?a4 ^* ?a5 ^* ?a6), 1) & sat(?a2 ^=:= n(?a3 ^+ ?a4 ^+ ?a5 ^+ ?a6), 1)
-
-    print(MatchDictionary.match(Foo, pA, pB))

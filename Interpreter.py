@@ -1467,7 +1467,3 @@ class Interpreter:
                 recursion_limit.count = original_recursion_limit
 
         # print(self.memory, "\n", self.references)
-
-
-if __name__ == '__main__':
-    print(Interpreter.buildThen("(A+B)&(C+D)|(G+H+V)&K"))

@@ -194,7 +194,7 @@ class Domain:
 
         self.update_range(depth, ranges, fixed, consts, elims, already)
 
-        # print(f"domain ranges {ranges}, with fixed {fixed}\n")
+        print(f"domain ranges {ranges}, with fixed {fixed}\n")
         yield from self.solve(depth, ranges, fixed, consts, elims, already)
 
     def solve(self, depth, ranges, fixed, rel_const, rel_elim, already):
@@ -370,7 +370,3 @@ class Domain:
                     return False
 
         return True
-
-
-if __name__ == "__main__":
-    pass
