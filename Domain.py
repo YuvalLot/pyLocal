@@ -282,9 +282,10 @@ class Domain:
             return
 
         for const in list(consts.keys()):
-            possible_sols = {}
-            new_set = set()
+            possible_sols = {}  # dictionary between variables and their solutions
+            new_set = set()  # to be : a set of all variables that appear in this const, and do not have an evaluation yet
 
+            # Updating the constraint dictionary
             for var in consts[const]:
                 if var not in fixed:
                     possible_sols[var] = set()
@@ -303,20 +304,28 @@ class Domain:
             # checking for when conditions
             try:
                 if self.when[original_const] != "":
-                    next(self.interpreter.mixed_query(smart_replace(self.when[original_const], fixed), 0, depth, True))
+                    sol_gen = self.interpreter.mixed_query(smart_replace(self.when[original_const], fixed), 0, depth, True)
+                    while next(sol_gen) in ["Print", "Request"]:
+                        pass
             except StopIteration:
                 # for when
                 continue
 
             if len(possible_sols) == 0:
                 try:
-                    next(self.interpreter.mixed_query(const, 0, depth, True))
+                    sol_gen = self.interpreter.mixed_query(const, 0, depth, True)
+                    while next(sol_gen) in ["Print", "Request"]:
+                        pass
                     del consts[original_const]
                     continue
                 except StopIteration:
                     return False
 
             for sol in self.interpreter.mixed_query(const, 0, depth, True):
+
+                if type(sol) != dict:
+                    continue
+
                 for var in possible_sols:
                     if var in sol:
                         possible_sols[var].add(sol[var])
@@ -364,6 +373,7 @@ class Domain:
                 for var in impossible_sols:
                     if var in sol:
                         impossible_sols[var].add(sol[var])
+
             for var in impossible_sols:
                 ranges[var] = ranges[var].difference(impossible_sols[var])
                 if len(ranges[var]) == 0:
